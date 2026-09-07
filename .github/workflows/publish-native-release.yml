@@ -5,7 +5,9 @@ on:
     branches:
       - codex/browser-env
     tags:
-      - 'mode_*_v*'
+      - 'mode_mac_arm_v*'
+      - 'mode_win_x64_v*'
+      - 'mode_linux_x64_v*'
     paths:
       - '.github/workflows/publish-native-release.yml'
       - configure.py
@@ -77,39 +79,6 @@ jobs:
             gh release create "$env:RELEASE_TAG" "dist\$env:RELEASE_TAG.zip" --target "$env:GITHUB_SHA" --title "$env:RELEASE_TAG" --generate-notes
           }
 
-  windows-x32:
-    if: startsWith(github.ref_name, 'mode_win_x32_v') || github.ref == 'refs/heads/codex/browser-env'
-    runs-on: windows-2022
-    timeout-minutes: 60
-    env:
-      RELEASE_TAG: ${{ startsWith(github.ref_name, 'mode_win_x32_v') && github.ref_name || 'mode_win_x32_v22.0.0' }}
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - name: Install 32-bit Rust target
-        shell: pwsh
-        run: rustup target add i686-pc-windows-msvc
-      - name: Build x32 binary
-        shell: cmd
-        run: vcbuild.bat x86
-      - name: Run browser environment regression test
-        shell: pwsh
-        run: .\out\Release\node.exe test\parallel\test-browser-env.js
-      - name: Package
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Path "dist\$env:RELEASE_TAG" -Force | Out-Null
-          Copy-Item "out\Release\node.exe" "dist\$env:RELEASE_TAG\mode.exe"
-          Compress-Archive -Path "dist\$env:RELEASE_TAG" -DestinationPath "dist\$env:RELEASE_TAG.zip"
-      - name: Create or update release
-        shell: pwsh
-        run: |
-          if (gh release view "$env:RELEASE_TAG" 2>$null) {
-            gh release upload "$env:RELEASE_TAG" "dist\$env:RELEASE_TAG.zip" --clobber
-          } else {
-            gh release create "$env:RELEASE_TAG" "dist\$env:RELEASE_TAG.zip" --target "$env:GITHUB_SHA" --title "$env:RELEASE_TAG" --generate-notes
-          }
-
   linux-x64:
     if: startsWith(github.ref_name, 'mode_linux_x64_v') || github.ref == 'refs/heads/codex/browser-env'
     runs-on: ubuntu-24.04
@@ -130,32 +99,6 @@ jobs:
           mkdir -p "dist/$RELEASE_TAG"
           cp out/Release/node "dist/$RELEASE_TAG/mode"
           tar -czf "dist/$RELEASE_TAG.tar.gz" -C dist "$RELEASE_TAG"
-      - name: Create or update release
-        run: |
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" "dist/$RELEASE_TAG.tar.gz" --clobber
-          else
-            gh release create "$RELEASE_TAG" "dist/$RELEASE_TAG.tar.gz" \
-              --target "$GITHUB_SHA" --title "$RELEASE_TAG" --generate-notes
-          fi
-
-  linux-x32:
-    if: startsWith(github.ref_name, 'mode_linux_x32_v') || github.ref == 'refs/heads/codex/browser-env'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 60
-    env:
-      RELEASE_TAG: ${{ startsWith(github.ref_name, 'mode_linux_x32_v') && github.ref_name || 'mode_linux_x32_v22.0.0' }}
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - name: Build and test native x32 binary
-        run: |
-          docker run --rm --platform linux/386 \
-            -e DEBIAN_FRONTEND=noninteractive \
-            -e RELEASE_TAG \
-            -v "$GITHUB_WORKSPACE:/src" -w /src \
-            i386/debian:bookworm \
-            bash -lc 'apt-get update && apt-get install -y build-essential ca-certificates git pkg-config python3 zlib1g-dev && ./configure --openssl-no-asm --shared-zlib && if ! make -j2 node >/tmp/mode-build.log 2>&1; then tail -n 200 /tmp/mode-build.log; exit 1; fi && out/Release/node test/parallel/test-browser-env.js && mkdir -p "dist/$RELEASE_TAG" && cp out/Release/node "dist/$RELEASE_TAG/mode" && tar -czf "dist/$RELEASE_TAG.tar.gz" -C dist "$RELEASE_TAG"'
       - name: Create or update release
         run: |
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
