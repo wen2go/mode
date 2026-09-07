@@ -275,11 +275,6 @@ if defined cfg              set configure_flags=%configure_flags% --control-flow
 if defined v8temporal       set configure_flags=%configure_flags% --v8-enable-temporal-support
 if defined v8windbg         set configure_flags=%configure_flags% --enable-v8windbg
 
-if "%target_arch%"=="x86" (
-  echo "32-bit Windows builds are not supported anymore."
-  exit /b 1
-)
-
 if not exist "%~dp0deps\icu" goto no-depsicu
 if "%target%"=="Clean" echo deleting %~dp0deps\icu
 if "%target%"=="Clean" rmdir /S /Q %~dp0deps\icu

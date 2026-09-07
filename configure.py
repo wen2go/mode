@@ -1890,8 +1890,12 @@ def configure_node(o):
   # triple for the target architecture.
   o['variables']['cargo_rust_target'] = ''
   if flavor == 'win':
-    o['variables']['cargo_rust_target'] = \
-      'aarch64-pc-windows-msvc' if target_arch == 'arm64' else 'x86_64-pc-windows-msvc'
+    if target_arch == 'arm64':
+      o['variables']['cargo_rust_target'] = 'aarch64-pc-windows-msvc'
+    elif target_arch == 'ia32':
+      o['variables']['cargo_rust_target'] = 'i686-pc-windows-msvc'
+    else:
+      o['variables']['cargo_rust_target'] = 'x86_64-pc-windows-msvc'
   # Always set the Rust target for x64 macOS in case we will be building
   # under Rosetta 2.
   if flavor == 'mac' and target_arch == 'x64':
