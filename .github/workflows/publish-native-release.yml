@@ -86,6 +86,9 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Install 32-bit Rust target
+        shell: pwsh
+        run: rustup target add i686-pc-windows-msvc
       - name: Build x32 binary
         shell: cmd
         run: vcbuild.bat x86

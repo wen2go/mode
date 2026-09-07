@@ -2896,7 +2896,7 @@ def _GenerateMSBuildRuleXmlFile(xml_path, msbuild_rules):
 def _GetConfigurationAndPlatform(name, settings, spec):
     configuration = name.rsplit("_", 1)[0]
     platform = settings.get("msvs_configuration_platform", "Win32")
-    if spec["toolset"] == "host" and platform == "arm64":
+    if spec["toolset"] == "host" and platform in ("Win32", "arm64"):
         platform = "x64"  # Host-only tools are always built for x64
     return (configuration, platform)
 

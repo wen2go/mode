@@ -22,7 +22,7 @@ def main():
         print('Usage: cargo_build.py <platform> <output_dir> [cargo_args...]', file=sys.stderr)
         sys.exit(1)
 
-    platform = sys.argv[1]     # x64 or arm64
+    platform = sys.argv[1]     # Win32, x64, or arm64
     output_dir = sys.argv[2]   # SHARED_INTERMEDIATE_DIR
     cargo_args = sys.argv[3:]
     build_profile = 'release' if '--release' in cargo_args else 'debug'
@@ -35,6 +35,7 @@ def main():
             cargo = cargo_home
 
     rust_target_map = {
+        'Win32': 'i686-pc-windows-msvc',
         'x64': 'x86_64-pc-windows-msvc',
         'arm64': 'aarch64-pc-windows-msvc',
     }
