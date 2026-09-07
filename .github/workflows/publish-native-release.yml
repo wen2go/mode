@@ -8,6 +8,8 @@ on:
       - 'mode_*_v*'
     paths:
       - '.github/workflows/publish-native-release.yml'
+      - configure.py
+      - vcbuild.bat
   workflow_dispatch:
 
 permissions:
