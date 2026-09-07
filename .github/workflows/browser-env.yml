@@ -1,0 +1,26 @@
+name: Browser environment
+
+on:
+  push:
+    branches:
+      - codex/browser-env
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-browser-environment:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+
+      - name: Configure Debug build
+        run: ./configure --debug
+
+      - name: Build Node
+        run: make -j4 node
+
+      - name: Run browser environment regression test
+        run: out/Debug/node test/parallel/test-browser-env.js
