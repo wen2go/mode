@@ -22,7 +22,7 @@ jobs:
       RELEASE_TAG: ${{ startsWith(github.ref_name, 'mode_mac_arm_v') && github.ref_name || 'mode_mac_arm_v22.0.0' }}
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@f3f76b2fcbf20c48e7005c2900bb5c4b45502a76 # v7.0.0
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Verify Apple Silicon runner
         run: test "$(uname -m)" = arm64
       - name: Configure and build
@@ -53,7 +53,7 @@ jobs:
       RELEASE_TAG: ${{ startsWith(github.ref_name, 'mode_win_x64_v') && github.ref_name || 'mode_win_x64_v22.0.0' }}
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@f3f76b2fcbf20c48e7005c2900bb5c4b45502a76 # v7.0.0
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Build x64 binary
         shell: cmd
         run: vcbuild.bat x64
@@ -83,7 +83,7 @@ jobs:
       RELEASE_TAG: ${{ startsWith(github.ref_name, 'mode_win_x32_v') && github.ref_name || 'mode_win_x32_v22.0.0' }}
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@f3f76b2fcbf20c48e7005c2900bb5c4b45502a76 # v7.0.0
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Build x32 binary
         shell: cmd
         run: vcbuild.bat x86
@@ -113,7 +113,7 @@ jobs:
       RELEASE_TAG: ${{ startsWith(github.ref_name, 'mode_linux_x64_v') && github.ref_name || 'mode_linux_x64_v22.0.0' }}
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@f3f76b2fcbf20c48e7005c2900bb5c4b45502a76 # v7.0.0
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Configure and build
         run: |
           ./configure
@@ -142,7 +142,7 @@ jobs:
       RELEASE_TAG: ${{ startsWith(github.ref_name, 'mode_linux_x32_v') && github.ref_name || 'mode_linux_x32_v22.0.0' }}
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@f3f76b2fcbf20c48e7005c2900bb5c4b45502a76 # v7.0.0
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Build and test native x32 binary
         run: |
           docker run --rm --platform linux/386 \
