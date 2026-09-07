@@ -150,7 +150,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y g++-multilib libc6-dev-i386
           ./configure --dest-cpu=x86
-          make -s -j2 node
+          make V=0 -j2 node
           out/Release/node test/parallel/test-browser-env.js
           mkdir -p "dist/$RELEASE_TAG"
           cp out/Release/node "dist/$RELEASE_TAG/mode"
