@@ -152,7 +152,7 @@ jobs:
             -e RELEASE_TAG \
             -v "$GITHUB_WORKSPACE:/src" -w /src \
             i386/debian:bookworm \
-            bash -lc 'apt-get update && apt-get install -y build-essential ca-certificates git pkg-config python3 && ./configure && if ! make -j2 node >/tmp/mode-build.log 2>&1; then tail -n 200 /tmp/mode-build.log; exit 1; fi && out/Release/node test/parallel/test-browser-env.js && mkdir -p "dist/$RELEASE_TAG" && cp out/Release/node "dist/$RELEASE_TAG/mode" && tar -czf "dist/$RELEASE_TAG.tar.gz" -C dist "$RELEASE_TAG"'
+            bash -lc 'apt-get update && apt-get install -y build-essential ca-certificates git nasm pkg-config python3 && ./configure && if ! make -j2 node >/tmp/mode-build.log 2>&1; then tail -n 200 /tmp/mode-build.log; exit 1; fi && out/Release/node test/parallel/test-browser-env.js && mkdir -p "dist/$RELEASE_TAG" && cp out/Release/node "dist/$RELEASE_TAG/mode" && tar -czf "dist/$RELEASE_TAG.tar.gz" -C dist "$RELEASE_TAG"'
       - name: Create or update release
         run: |
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
