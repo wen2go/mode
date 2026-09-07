@@ -1,0 +1,19 @@
+{
+  "url": "https://profile.example.test/path?from=profile",
+  "html": "<html><head><title>Profile</title></head><body><main id=\"app\" class=\"ready\">ok</main></body></html>",
+  "navigator": {
+    "userAgent": "ProfileBrowser/1.0",
+    "platform": "ProfileOS",
+    "languages": ["zh-CN", "zh"]
+  },
+  "window": {
+    "properties": {
+      "profileEnabled": true
+    }
+  },
+  "document": {
+    "properties": {
+      "visibilityState": "hidden"
+    }
+  }
+}

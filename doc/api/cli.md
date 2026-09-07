@@ -564,6 +564,18 @@ The following options are currently supported:
 When using this flag, additional script files provided on the command line will
 not be executed and instead be interpreted as regular command line arguments.
 
+### `--browser-env-profile=file`
+
+<!-- YAML
+added: REPLACEME
+-->
+
+Install the browser-compatible environment described by the JSON profile before
+any user code is evaluated. The profile must contain a `url` string and can
+provide initial HTML, browser identity values, and custom `window` or
+`document` properties. See [`node:browser-env`][] for the supported profile
+shape and limitations.
+
 ### `-c`, `--check`
 
 <!-- YAML
@@ -3859,6 +3871,7 @@ one is included in the list below.
 * `--allow-openssl-store`
 * `--allow-wasi`
 * `--allow-worker`
+* `--browser-env-profile`
 * `--conditions`, `-C`
 * `--cpu-prof-dir`
 * `--cpu-prof-interval`
@@ -4546,6 +4559,7 @@ node --stack-trace-limit=12 -p -e "Error.stackTraceLimit" # prints 12
 [`import` specifier]: esm.md#import-specifiers
 [`net.getDefaultAutoSelectFamilyAttemptTimeout()`]: net.md#netgetdefaultautoselectfamilyattempttimeout
 [`node:ffi`]: ffi.md
+[`node:browser-env`]: browser-env.md
 [`node:sqlite`]: sqlite.md
 [`node:stream/iter`]: stream_iter.md
 [`node:vfs`]: vfs.md

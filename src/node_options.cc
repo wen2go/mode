@@ -652,6 +652,10 @@ EnvironmentOptionsParser::EnvironmentOptionsParser() {
             BOOL_FIELD(experimental_global_navigator),
             kAllowedInEnvvar,
             true);
+  AddOption("--browser-env-profile",
+            "install a browser-compatible environment from a JSON profile",
+            &EnvironmentOptions::browser_env_profile,
+            kAllowedInEnvvar);
   AddOption("--experimental-global-webcrypto", "", NoOp{}, kAllowedInEnvvar);
   AddOption("--experimental-json-modules", "", NoOp{}, kAllowedInEnvvar);
   AddOption("--experimental-loader",

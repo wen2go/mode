@@ -117,6 +117,7 @@
       'src/node_api.cc',
       'src/node_binding.cc',
       'src/node_blob.cc',
+      'src/node_browser_env.cc',
       'src/node_buffer.cc',
       'src/node_builtins.cc',
       'src/node_config.cc',

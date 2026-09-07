@@ -134,6 +134,7 @@ class EnvironmentOptions : public Options {
 #endif  // DEBUG
 
   std::string dns_result_order;
+  std::string browser_env_profile;
   std::string localstorage_file;
   std::string input_type;  // Value of --input-type
   std::string heap_snapshot_signal;

@@ -41,6 +41,7 @@
   V(async_wrap)                                                                \
   V(blob)                                                                      \
   V(block_list)                                                                \
+  V(browser_env)                                                               \
   V(buffer)                                                                    \
   V(builtins)                                                                  \
   V(cares_wrap)                                                                \

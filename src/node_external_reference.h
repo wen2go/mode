@@ -66,6 +66,7 @@ class ExternalReferenceRegistry {
   V(async_wrap)                                                                \
   V(binding)                                                                   \
   V(blob)                                                                      \
+  V(browser_env)                                                               \
   V(buffer)                                                                    \
   V(builtins)                                                                  \
   V(cares_wrap)                                                                \

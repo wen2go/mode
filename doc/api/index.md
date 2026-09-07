@@ -11,6 +11,7 @@
 * [Asynchronous context tracking](async_context.md)
 * [Async hooks](async_hooks.md)
 * [Buffer](buffer.md)
+* [Browser environment](browser-env.md)
 * [C++ addons](addons.md)
 * [C/C++ addons with Node-API](n-api.md)
 * [C++ embedder API](embedding.md)
