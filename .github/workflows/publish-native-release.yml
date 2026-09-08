@@ -2,16 +2,10 @@ name: Publish native release
 
 on:
   push:
-    branches:
-      - codex/browser-env
     tags:
       - 'mode_mac_arm_v*'
       - 'mode_win_x64_v*'
       - 'mode_linux_x64_v*'
-    paths:
-      - '.github/workflows/publish-native-release.yml'
-      - configure.py
-      - vcbuild.bat
   workflow_dispatch:
 
 permissions:
@@ -19,11 +13,11 @@ permissions:
 
 jobs:
   mac-arm:
-    if: startsWith(github.ref_name, 'mode_mac_arm_v') || github.ref == 'refs/heads/codex/browser-env'
+    if: startsWith(github.ref_name, 'mode_mac_arm_v')
     runs-on: macos-15
-    timeout-minutes: 60
+    timeout-minutes: 120
     env:
-      RELEASE_TAG: ${{ startsWith(github.ref_name, 'mode_mac_arm_v') && github.ref_name || 'mode_mac_arm_v22.0.0' }}
+      RELEASE_TAG: ${{ github.ref_name }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -50,11 +44,11 @@ jobs:
           fi
 
   windows-x64:
-    if: startsWith(github.ref_name, 'mode_win_x64_v') || github.ref == 'refs/heads/codex/browser-env'
+    if: startsWith(github.ref_name, 'mode_win_x64_v')
     runs-on: windows-2022
     timeout-minutes: 60
     env:
-      RELEASE_TAG: ${{ startsWith(github.ref_name, 'mode_win_x64_v') && github.ref_name || 'mode_win_x64_v22.0.0' }}
+      RELEASE_TAG: ${{ github.ref_name }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -80,11 +74,11 @@ jobs:
           }
 
   linux-x64:
-    if: startsWith(github.ref_name, 'mode_linux_x64_v') || github.ref == 'refs/heads/codex/browser-env'
+    if: startsWith(github.ref_name, 'mode_linux_x64_v')
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 120
     env:
-      RELEASE_TAG: ${{ startsWith(github.ref_name, 'mode_linux_x64_v') && github.ref_name || 'mode_linux_x64_v22.0.0' }}
+      RELEASE_TAG: ${{ github.ref_name }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
