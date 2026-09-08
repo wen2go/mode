@@ -87,6 +87,7 @@ spawnSyncAndAssert(process.execPath, [
       () => install({ url: 'https://example.test/', document: { properties: { all: null } } }),
       /protected browser environment property/,
     );
+    assert.strictEqual(typeof globalThis.document, 'undefined');
     assert.throws(
       () => install({ url: 'https://example.test/', document: { descriptors: { createElement: { value: null } } } }),
       /protected browser environment property/,
