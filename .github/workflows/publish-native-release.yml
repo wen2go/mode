@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Release tag, for example mode_20260910_v22.0.1'
+        description: 'Release tag, for example mode_20260910_v22.0.2'
         required: true
         type: string
 
@@ -135,9 +135,16 @@ jobs:
           merge-multiple: true
       - name: Create or update the unified release
         run: |
+          shopt -s nullglob
+          assets=(dist/*.tar.gz dist/*.zip)
+          if (( ${#assets[@]} != 3 )); then
+            echo "Expected exactly three release assets:" >&2
+            find dist -maxdepth 2 -type f -print >&2
+            exit 1
+          fi
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" dist/* --clobber
+            gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
           else
-            gh release create "$RELEASE_TAG" dist/* \
-              --target "$GITHUB_SHA" --title "$RELEASE_TAG" --generate-notes
+            gh release create "$RELEASE_TAG" "${assets[@]}" \
+              --verify-tag --title "$RELEASE_TAG" --notes-from-tag
           fi
