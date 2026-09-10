@@ -5,7 +5,7 @@ runtime environment. It is intended for running JavaScript that expects common
 browser globals, without embedding Chromium or rendering a page.
 
 > The executable keeps the upstream Node.js version string. Mode releases use
-> one date-stamped tag, such as `mode_20260910_v22.0.2`; the `v22.0.2` part is
+> one date-stamped tag, such as `mode_20260910_v22.0.3`; the `v22.0.3` part is
 > the Mode release label, not a claim about the embedded upstream Node.js version.
 
 ## Mode browser environment
@@ -16,21 +16,21 @@ Download the archive that matches the host CPU from [GitHub Releases][mode-relea
 
 | Platform | Unified release | Archive |
 | --- | --- | --- |
-| macOS Apple Silicon (ARM64) | [mode_20260910_v22.0.2][mode-release] | `mode_mac_arm_20260910_v22.0.2.tar.gz` |
-| Windows x64 | [mode_20260910_v22.0.2][mode-release] | `mode_win_x64_20260910_v22.0.2.zip` |
-| Linux x64 | [mode_20260910_v22.0.2][mode-release] | `mode_linux_x64_20260910_v22.0.2.tar.gz` |
+| macOS Apple Silicon (ARM64) | [mode_20260910_v22.0.3][mode-release] | `mode_mac_arm_20260910_v22.0.3.tar.gz` |
+| Windows x64 | [mode_20260910_v22.0.3][mode-release] | `mode_win_x64_20260910_v22.0.3.zip` |
+| Linux x64 | [mode_20260910_v22.0.3][mode-release] | `mode_linux_x64_20260910_v22.0.3.tar.gz` |
 
 On macOS or Linux, extract the archive and place `mode` on `PATH`:
 
 ```bash
-tar -xzf mode_linux_x64_20260910_v22.0.2.tar.gz
+tar -xzf mode_linux_x64_20260910_v22.0.3.tar.gz
 mkdir -p "$HOME/.local/bin"
-install -m 755 mode_linux_x64_20260910_v22.0.2/mode "$HOME/.local/bin/mode"
+install -m 755 mode_linux_x64_20260910_v22.0.3/mode "$HOME/.local/bin/mode"
 export PATH="$HOME/.local/bin:$PATH"
 mode --version
 ```
 
-Use `mode_mac_arm_20260910_v22.0.2` in the commands above for macOS Apple Silicon.
+Use `mode_mac_arm_20260910_v22.0.3` in the commands above for macOS Apple Silicon.
 Add the `export PATH=...` line to the shell startup file if the command should
 remain available in future terminals.
 
@@ -38,8 +38,8 @@ On Windows, extract the ZIP, then run `mode.exe` from its directory or add that
 directory to `PATH`:
 
 ```powershell
-Expand-Archive .\mode_win_x64_20260910_v22.0.2.zip
-.\mode_win_x64_20260910_v22.0.2\mode.exe --version
+Expand-Archive .\mode_win_x64_20260910_v22.0.3.zip
+.\mode_win_x64_20260910_v22.0.3\mode.exe --version
 ```
 
 Verify that the installed executable has the Mode extension:
@@ -1085,7 +1085,7 @@ additions comply with the project’s license guidelines.
 [Code of Conduct]: https://github.com/nodejs/admin/blob/HEAD/CODE_OF_CONDUCT.md
 [Contributing to the project]: CONTRIBUTING.md
 [browser-env-api]: doc/api/browser-env.md
-[mode-release]: https://github.com/wen2go/mode/releases/tag/mode_20260910_v22.0.2
+[mode-release]: https://github.com/wen2go/mode/releases/tag/mode_20260910_v22.0.3
 [mode-releases]: https://github.com/wen2go/mode/releases
 [Node.js website]: https://nodejs.org/
 [OpenJS Foundation]: https://openjsf.org/
