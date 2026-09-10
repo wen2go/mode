@@ -46,6 +46,9 @@ const moduleScript = `
   assert.strictEqual(document.querySelector('#app').textContent, 'hello');
   assert.strictEqual(document.querySelector('.ready').id, 'app');
   assert.strictEqual(document.querySelectorAll('body #app').length, 1);
+  const divs = document.getElementsByTagName('div');
+  assert.strictEqual(divs[0], document.querySelector('#app'));
+  assert.strictEqual(divs[0].getAttribute('id'), 'app');
   assert.strictEqual(navigator.userAgent, 'TestBrowser/1.0');
   assert.strictEqual(navigator.platform, 'TestOS');
   assert.deepStrictEqual(navigator.languages, ['zh-CN', 'zh']);

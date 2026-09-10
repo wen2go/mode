@@ -3,22 +3,41 @@ name: Publish native release
 on:
   push:
     tags:
-      - 'mode_mac_arm_v*'
-      - 'mode_win_x64_v*'
-      - 'mode_linux_x64_v*'
+      - 'mode_20*_v*'
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag, for example mode_20260910_v22.0.1'
+        required: true
+        type: string
 
 permissions:
   contents: write
 
 jobs:
-  mac-arm:
-    if: startsWith(github.ref_name, 'mode_mac_arm_v')
+  validate-release-tag:
+    runs-on: ubuntu-24.04
+    outputs:
+      release_tag: ${{ steps.release.outputs.tag }}
+      release_suffix: ${{ steps.release.outputs.suffix }}
+    steps:
+      - id: release
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^mode_[0-9]{8}_v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tag must use mode_YYYYmmdd_vX.Y.Z: $RELEASE_TAG" >&2
+            exit 1
+          fi
+          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "suffix=${RELEASE_TAG#mode_}" >> "$GITHUB_OUTPUT"
+
+  mac-arm64:
+    needs: validate-release-tag
     runs-on: macos-15
     timeout-minutes: 120
     env:
-      RELEASE_TAG: ${{ github.ref_name }}
-      GH_TOKEN: ${{ github.token }}
+      RELEASE_SUFFIX: ${{ needs.validate-release-tag.outputs.release_suffix }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Verify Apple Silicon runner
@@ -27,77 +46,98 @@ jobs:
         run: |
           ./configure
           make -j3 node
-      - name: Run browser environment regression test
-        run: out/Release/node test/parallel/test-browser-env.js
+      - name: Run Mode regressions
+        run: |
+          out/Release/node test/parallel/test-browser-env.js
+          out/Release/node --test rs_mode_server/test/server.test.js
       - name: Package
         run: |
-          mkdir -p "dist/$RELEASE_TAG"
-          cp out/Release/node "dist/$RELEASE_TAG/mode"
-          tar -czf "dist/$RELEASE_TAG.tar.gz" -C dist "$RELEASE_TAG"
-      - name: Create or update release
-        run: |
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" "dist/$RELEASE_TAG.tar.gz" --clobber
-          else
-            gh release create "$RELEASE_TAG" "dist/$RELEASE_TAG.tar.gz" \
-              --target "$GITHUB_SHA" --title "$RELEASE_TAG" --generate-notes
-          fi
+          package="mode_mac_arm_${RELEASE_SUFFIX}"
+          mkdir -p "dist/$package"
+          cp out/Release/node "dist/$package/mode"
+          tar -czf "dist/$package.tar.gz" -C dist "$package"
+      - name: Stage release asset
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mode-mac-arm
+          path: dist/*.tar.gz
+          if-no-files-found: error
 
   windows-x64:
-    if: startsWith(github.ref_name, 'mode_win_x64_v')
+    needs: validate-release-tag
     runs-on: windows-2022
     timeout-minutes: 60
     env:
-      RELEASE_TAG: ${{ github.ref_name }}
-      GH_TOKEN: ${{ github.token }}
+      RELEASE_SUFFIX: ${{ needs.validate-release-tag.outputs.release_suffix }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Build x64 binary
         shell: cmd
         run: vcbuild.bat x64
-      - name: Run browser environment regression test
+      - name: Run Mode regressions
         shell: pwsh
-        run: .\out\Release\node.exe test\parallel\test-browser-env.js
+        run: |
+          .\out\Release\node.exe test\parallel\test-browser-env.js
+          .\out\Release\node.exe --test rs_mode_server/test/server.test.js
       - name: Package
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Path "dist\$env:RELEASE_TAG" -Force | Out-Null
-          Copy-Item "out\Release\node.exe" "dist\$env:RELEASE_TAG\mode.exe"
-          Compress-Archive -Path "dist\$env:RELEASE_TAG" -DestinationPath "dist\$env:RELEASE_TAG.zip"
-      - name: Create or update release
-        shell: pwsh
-        run: |
-          if (gh release view "$env:RELEASE_TAG" 2>$null) {
-            gh release upload "$env:RELEASE_TAG" "dist\$env:RELEASE_TAG.zip" --clobber
-          } else {
-            gh release create "$env:RELEASE_TAG" "dist\$env:RELEASE_TAG.zip" --target "$env:GITHUB_SHA" --title "$env:RELEASE_TAG" --generate-notes
-          }
+          $package = "mode_win_x64_$env:RELEASE_SUFFIX"
+          New-Item -ItemType Directory -Path "dist\$package" -Force | Out-Null
+          Copy-Item "out\Release\node.exe" "dist\$package\mode.exe"
+          Compress-Archive -Path "dist\$package" -DestinationPath "dist\$package.zip"
+      - name: Stage release asset
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mode-windows-x64
+          path: dist/*.zip
+          if-no-files-found: error
 
   linux-x64:
-    if: startsWith(github.ref_name, 'mode_linux_x64_v')
+    needs: validate-release-tag
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:
-      RELEASE_TAG: ${{ github.ref_name }}
-      GH_TOKEN: ${{ github.token }}
+      RELEASE_SUFFIX: ${{ needs.validate-release-tag.outputs.release_suffix }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Configure and build
         run: |
           ./configure
           make -j4 node
-      - name: Run browser environment regression test
-        run: out/Release/node test/parallel/test-browser-env.js
+      - name: Run Mode regressions
+        run: |
+          out/Release/node test/parallel/test-browser-env.js
+          out/Release/node --test rs_mode_server/test/server.test.js
       - name: Package
         run: |
-          mkdir -p "dist/$RELEASE_TAG"
-          cp out/Release/node "dist/$RELEASE_TAG/mode"
-          tar -czf "dist/$RELEASE_TAG.tar.gz" -C dist "$RELEASE_TAG"
-      - name: Create or update release
+          package="mode_linux_x64_${RELEASE_SUFFIX}"
+          mkdir -p "dist/$package"
+          cp out/Release/node "dist/$package/mode"
+          tar -czf "dist/$package.tar.gz" -C dist "$package"
+      - name: Stage release asset
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mode-linux-x64
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+  publish-release:
+    needs: [validate-release-tag, mac-arm64, windows-x64, linux-x64]
+    runs-on: ubuntu-24.04
+    env:
+      RELEASE_TAG: ${{ needs.validate-release-tag.outputs.release_tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create or update the unified release
         run: |
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" "dist/$RELEASE_TAG.tar.gz" --clobber
+            gh release upload "$RELEASE_TAG" dist/* --clobber
           else
-            gh release create "$RELEASE_TAG" "dist/$RELEASE_TAG.tar.gz" \
+            gh release create "$RELEASE_TAG" dist/* \
               --target "$GITHUB_SHA" --title "$RELEASE_TAG" --generate-notes
           fi
