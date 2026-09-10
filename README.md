@@ -1,4 +1,182 @@
-# Node.js
+# Mode
+
+Mode is a Node.js distribution with an optional lightweight browser-compatible
+runtime environment. It is intended for running JavaScript that expects common
+browser globals, without embedding Chromium or rendering a page.
+
+> The executable keeps the upstream Node.js version string. The `v22.0.0` part
+> of the release name is the Mode release label, not a claim that the embedded
+> Node.js runtime is upstream Node.js 22.
+
+## Mode browser environment
+
+### Install
+
+Download the archive that matches the host CPU from [GitHub Releases][mode-releases]:
+
+| Platform | Release | Archive |
+| --- | --- | --- |
+| macOS Apple Silicon (ARM64) | [mode_mac_arm_v22.0.0][mode-mac-release] | `mode_mac_arm_v22.0.0.tar.gz` |
+| Windows x64 | [mode_win_x64_v22.0.0][mode-windows-release] | `mode_win_x64_v22.0.0.zip` |
+| Linux x64 | [mode_linux_x64_v22.0.0][mode-linux-release] | `mode_linux_x64_v22.0.0.tar.gz` |
+
+On macOS or Linux, extract the archive and place `mode` on `PATH`:
+
+```bash
+tar -xzf mode_linux_x64_v22.0.0.tar.gz
+mkdir -p "$HOME/.local/bin"
+install -m 755 mode_linux_x64_v22.0.0/mode "$HOME/.local/bin/mode"
+export PATH="$HOME/.local/bin:$PATH"
+mode --version
+```
+
+Use `mode_mac_arm_v22.0.0` in the commands above for macOS Apple Silicon.
+Add the `export PATH=...` line to the shell startup file if the command should
+remain available in future terminals.
+
+On Windows, extract the ZIP, then run `mode.exe` from its directory or add that
+directory to `PATH`:
+
+```powershell
+Expand-Archive .\mode_win_x64_v22.0.0.zip
+.\mode_win_x64_v22.0.0\mode.exe --version
+```
+
+Verify that the installed executable has the Mode extension:
+
+```bash
+mode -e "console.log(typeof require('node:browser-env').install)"
+```
+
+It must print `function`. If it reports `Cannot find module 'node:browser-env'`,
+the shell is running a different Node.js executable.
+
+### What it provides
+
+After installation, Mode can create these browser-like globals in the current
+JavaScript Realm:
+
+* `window`, `self`, and `globalThis` identity aliases.
+* `document` with a lightweight DOM tree, HTML parsing, element creation,
+  append/remove/update operations, and common query APIs such as
+  `getElementById()`, `querySelector()`, and `querySelectorAll()`.
+* Native-compatible `document.all`, including its special `typeof`, boolean,
+  loose-equality, indexed, and named-lookup behavior.
+* Virtual `location` and `history` objects.
+* Profiled `navigator` and `screen` values.
+* In-memory `document.cookie`, `localStorage`, and `sessionStorage`.
+* Basic DOM event-target methods: `addEventListener()`, `removeEventListener()`,
+  and `dispatchEvent()`.
+
+It deliberately does **not** provide a renderer, layout engine, Canvas, WebGL,
+real navigation, or automatic execution of `<script>` tags contained in the
+initial HTML. It is a script compatibility environment, not a headless browser.
+
+### Start an existing script with a JSON profile
+
+The `--browser-env-profile` option installs the environment before the target
+script is evaluated. Create `browser-profile.json`:
+
+```json
+{
+  "url": "https://example.com/page?a=1",
+  "html": "<html><body><div id=\"app\">hello</div></body></html>",
+  "navigator": {
+    "userAgent": "Mozilla/5.0",
+    "platform": "Win32",
+    "languages": ["zh-CN", "zh"]
+  },
+  "window": {
+    "properties": {
+      "customFlag": true
+    }
+  },
+  "document": {
+    "properties": {
+      "visibilityState": "hidden"
+    },
+    "descriptors": {
+      "challengeValue": {
+        "value": "custom-value",
+        "enumerable": true
+      }
+    }
+  }
+}
+```
+
+Then launch the target file:
+
+```bash
+mode --browser-env-profile=./browser-profile.json target.js
+```
+
+Inside `target.js`, the configured globals are immediately available:
+
+```js
+console.log(window === globalThis);                         // true
+console.log(location.href);                                 // configured URL
+console.log(navigator.platform);                            // Win32
+console.log(document.querySelector('#app').textContent);    // hello
+console.log(document.visibilityState);                       // hidden
+console.log(window.customFlag);                              // true
+console.log(document.all == null);                           // true
+console.log(typeof document.all);                            // undefined
+```
+
+The profile is JSON, so descriptors in it may only use JSON-representable
+values. `url` is required. `location.href` is accepted as an alternative URL
+field for profile compatibility.
+
+### Install from JavaScript
+
+Use `node:browser-env` when getters, setters, functions, or values computed at
+startup are needed. Install first, then load the code that reads browser
+globals:
+
+```js
+// boot.js
+const { install, isInstalled } = require('node:browser-env');
+
+console.log(isInstalled()); // false
+
+install({
+  url: 'https://example.com/',
+  html: '<div id="app"></div>',
+  navigator: { platform: 'Win32', languages: ['zh-CN', 'zh'] },
+  window: {
+    properties: { customFlag: true },
+  },
+  document: {
+    properties: { visibilityState: 'hidden' },
+    descriptors: {
+      challengeValue: {
+        enumerable: true,
+        get() {
+          return 'dynamic-value';
+        },
+      },
+    },
+  },
+});
+
+require('./target.js');
+```
+
+Run it with:
+
+```bash
+mode boot.js
+```
+
+`install()` returns `{ window, document, navigator, location }` and can only
+be called once per Realm. It must not be combined with
+`--browser-env-profile` in the same Realm. Custom `window` and `document`
+properties cannot replace protected runtime members such as `document.all`,
+DOM query/construction methods, `location`, `navigator`, or the `window` /
+`globalThis` identity aliases.
+
+For the complete API reference, see [Browser environment API][browser-env-api].
 
 Node.js is an open-source, cross-platform JavaScript runtime environment.
 
@@ -17,6 +195,7 @@ that discourage, exhaust, or otherwise negatively affect other participants.
 
 ## Table of contents
 
+* [Mode browser environment](#mode-browser-environment)
 * [Support](#support)
 * [Release types](#release-types)
   * [Download](#download)
@@ -905,6 +1084,11 @@ additions comply with the project’s license guidelines.
 
 [Code of Conduct]: https://github.com/nodejs/admin/blob/HEAD/CODE_OF_CONDUCT.md
 [Contributing to the project]: CONTRIBUTING.md
+[browser-env-api]: doc/api/browser-env.md
+[mode-linux-release]: https://github.com/wen2go/mode/releases/tag/mode_linux_x64_v22.0.0
+[mode-mac-release]: https://github.com/wen2go/mode/releases/tag/mode_mac_arm_v22.0.0
+[mode-releases]: https://github.com/wen2go/mode/releases
+[mode-windows-release]: https://github.com/wen2go/mode/releases/tag/mode_win_x64_v22.0.0
 [Node.js website]: https://nodejs.org/
 [OpenJS Foundation]: https://openjsf.org/
 [Strategic initiatives]: doc/contributing/strategic-initiatives.md
