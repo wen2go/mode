@@ -152,12 +152,19 @@ test('the request-size limit keeps the HTTP 500 compatibility response', async (
   }
 });
 
-test('unsupported browser interfaces fail instead of falling back to env.js', async () => {
+test('XMLHttpRequest compatibility runs without loading env.js', async () => {
   const response = await request(rsPort, 'POST', '/rs_env', {
     ...validPayload(),
-    html: challengeWith('var $_ = 1; new XMLHttpRequest();'),
+    html: fixtureHtml.replace("document.cookie = 'inline=ok; Path=/';", `
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/probe');
+      xhr.send('payload');
+      document.cookie = 'xhr=' + encode_url + ':' + encode_data;
+      document.cookie = 'inline=ok; Path=/';
+    `),
   });
-  assert.deepEqual(response, { statusCode: 500, body: {} });
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.body.xhr, '/probe:payload');
 });
 
 test('a runaway challenge is terminated by the worker timeout', async () => {

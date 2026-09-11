@@ -84,6 +84,91 @@ spawnSyncAndAssert(process.execPath, ['-e', moduleScript], { status: 0, stderr: 
 spawnSyncAndAssert(process.execPath, [
   '-e',
   `
+    (async () => {
+      const assert = require('node:assert');
+      const { install } = require('node:browser-env');
+      install({
+        url: 'https://example.test/page?x=1',
+        html: '<html><body><form id="form"><input name="token" value="initial"></form></body></html>',
+        navigator: { userAgent: 'Mozilla/5.0 ModeTest' },
+      });
+
+      assert.strictEqual(window.innerWidth, 1920);
+      assert.strictEqual(window.outerHeight, 1080);
+      assert.strictEqual(screen.orientation.type, 'landscape-primary');
+      assert.strictEqual(location.ancestorOrigins.length, 0);
+      assert.strictEqual(clientInformation, navigator);
+      assert.strictEqual(navigator.appName, 'Netscape');
+      assert.strictEqual(navigator.appVersion, '5.0 ModeTest');
+      assert.strictEqual(navigator.connection.effectiveType, '4g');
+      assert.strictEqual(navigator.mimeTypes.length, 2);
+      assert.strictEqual(navigator.mimeTypes.namedItem('application/pdf').suffixes, 'pdf');
+      assert.strictEqual(navigator.sendBeacon('/beacon', 'body'), true);
+      assert.strictEqual((await navigator.getBattery()).charging, true);
+
+      assert(document instanceof Document);
+      assert(document.body instanceof HTMLElement);
+      assert(document.createTextNode('text') instanceof Text);
+      assert.strictEqual(Object.prototype.toString.call(document.getElementsByTagName('input')), '[object HTMLCollection]');
+      assert.deepStrictEqual(document.createExpression(), Object.create(null));
+
+      const anchor = document.createElement('a');
+      anchor.href = '/next?q=1#hash';
+      assert(anchor instanceof HTMLAnchorElement);
+      assert.strictEqual(anchor.href, 'https://example.test/next?q=1#hash');
+      assert.strictEqual(anchor.host, 'example.test');
+      const form = document.querySelector('#form');
+      assert(form instanceof HTMLFormElement);
+      assert.strictEqual(form.elements.namedItem('token').value, 'initial');
+
+      const canvas = document.createElement('canvas');
+      assert(canvas instanceof HTMLCanvasElement);
+      assert(canvas.getContext('2d') instanceof CanvasRenderingContext2D);
+      assert.strictEqual(canvas.toDataURL(), 'data:,');
+
+      const parsed = new DOMParser().parseFromString('<html><body><p id="parsed">ok</p></body></html>', 'text/html');
+      assert(parsed instanceof Document);
+      assert.strictEqual(parsed.querySelector('#parsed').textContent, 'ok');
+
+      const xhr = new XMLHttpRequest();
+      const states = [];
+      xhr.addEventListener('readystatechange', () => states.push(xhr.readyState));
+      xhr.open('POST', '/challenge');
+      xhr.setRequestHeader('x-test', 'yes');
+      xhr.send('payload');
+      assert.deepStrictEqual(states, [XMLHttpRequest.OPENED, XMLHttpRequest.DONE]);
+      assert.strictEqual(xhr.status, 0);
+      assert.strictEqual(xhr.responseURL, 'https://example.test/challenge');
+      assert.strictEqual(window.encode_url, '/challenge');
+      assert.strictEqual(window.encode_data, 'payload');
+
+      let observed = false;
+      const observer = new MutationObserver(() => { observed = true; });
+      observer.observe(document.body, { childList: true });
+      assert.strictEqual(observer.takeRecords().length, 0);
+      observer.disconnect();
+      assert.strictEqual(observed, false);
+      assert.strictEqual(indexedDB.open('mode-test').result.name, 'mode-test');
+      assert.strictEqual(chrome.app.isInstalled, false);
+      assert.strictEqual(typeof chrome.loadTimes, 'function');
+      assert.strictEqual(msCrypto, globalThis.crypto);
+      assert.strictEqual(typeof msCrypto.getRandomValues, 'function');
+      assert.strictEqual(window.open('https://example.test/').closed, false);
+      assert.strictEqual(window.prompt('question'), null);
+      assert.strictEqual(typeof webkitRequestFileSystem, 'function');
+
+      assert.strictEqual(document.all[0], document.documentElement);
+      assert.strictEqual(document.all[3], form);
+    })().catch((error) => {
+      console.error(error.stack);
+      process.exitCode = 1;
+    });
+  `,
+], { status: 0, stderr: '' });
+
+spawnSyncAndAssert(process.execPath, [
+  '-e',
+  `
     const assert = require('node:assert');
     const { install } = require('node:browser-env');
     assert.throws(

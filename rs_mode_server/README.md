@@ -40,23 +40,25 @@ before launching to change the bind address or port.
 ```
 
 On success, it returns the Cookie object set by the challenge. Invalid requests,
-missing challenge markers or scripts, external-script errors, unsupported browser
-interfaces, and worker timeouts return HTTP 500 with `{}`.
+missing challenge markers or scripts, external-script errors, and worker timeouts
+return HTTP 500 with `{}`.
 
 Each request executes in its own Worker. The Worker installs a fresh Mode browser
 environment with the supplied URL, original HTML, dynamic user agent, DOM,
-`document.all`, location/history, cookies, Storage, event interfaces, base
-navigator values, screen dimensions, window dimensions, and hidden document
-visibility. External `r="m"` scripts are cached under `out_js/`; the cache is
-ignored by Git.
+`document.all`, location/history, cookies, Storage, event interfaces, DOMParser,
+basic XHR state transitions, base navigator values (including connection,
+mimeTypes, battery, and beacon APIs), screen dimensions, window dimensions, and
+hidden document visibility. External `r="m"` scripts are cached under `out_js/`;
+the cache is ignored by Git.
 
 ## Strict compatibility boundary
 
-This service intentionally provides only the Mode browser environment. It does
-not emulate the old `env.js` fallback surface, including fake XHR/fetch responses,
-Canvas/WebGL, `chrome`, `mimeTypes`, battery APIs, form hacks, or native
-`toString` spoofing. A challenge that depends on one of these missing APIs fails
-with the normal HTTP 500 response instead of silently mixing environments.
+This service intentionally provides only the Mode browser environment. Its XHR
+implementation records `open()` and `send()` arguments without making a network
+request; Node's built-in `fetch` retains its normal behavior. The Canvas surface
+is deterministic and has no renderer or pixel fingerprint. WebGL, site-specific
+prebuilt challenge DOM, form hacks, and native `toString` spoofing are not
+implemented.
 
 ## Tests
 
