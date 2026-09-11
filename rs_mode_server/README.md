@@ -48,8 +48,11 @@ environment with the supplied URL, original HTML, dynamic user agent, DOM,
 `document.all`, location/history, cookies, Storage, event interfaces, DOMParser,
 basic XHR state transitions, base navigator values (including connection,
 mimeTypes, battery, and beacon APIs), screen dimensions, window dimensions, and
-hidden document visibility. External `r="m"` scripts are cached under `out_js/`;
-the cache is ignored by Git.
+hidden document visibility. The Worker also removes the Node-only global aliases
+`global`, `process`, `Buffer`, `require`, `module`, `exports`, `__dirname`,
+`__filename`, `setImmediate`, and `clearImmediate`; challenge code is evaluated
+without a CommonJS `require` parameter. External `r="m"` scripts are cached
+under `out_js/`; the cache is ignored by Git.
 
 ## Strict compatibility boundary
 

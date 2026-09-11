@@ -53,6 +53,12 @@ installed browser environment.
   * `cookies` {string|Object} Optional initial in-memory cookies.
   * `localStorage` {Object} Optional initial local storage values.
   * `sessionStorage` {Object} Optional initial session storage values.
+  * `hideNodeGlobals` {boolean} When `true`, removes the configurable Node-only
+    global aliases `global`, `process`, `Buffer`, `require`, `module`,
+    `exports`, `__dirname`, `__filename`, `setImmediate`, and `clearImmediate`
+    from this Realm after installation. Use it when browser challenge code is
+    evaluated through a separate function; it is `false` by default so normal
+    Mode scripts retain their Node entry points.
   * `window.properties` {Object} Optional ordinary custom global properties.
   * `window.descriptors` {Object} Optional custom property descriptors.
   * `document.properties` {Object} Optional ordinary custom document

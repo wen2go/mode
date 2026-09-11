@@ -112,6 +112,21 @@ test('runs local inline and external challenge scripts in Mode browser-env', asy
   });
 });
 
+test('challenge workers expose browser globals without Node global aliases', async () => {
+  const response = await request(rsPort, 'POST', '/rs_env', {
+    ...validPayload(),
+    html: fixtureHtml.replace('var $_ = { fixture: true };', `
+      var $_ = { fixture: true };
+      if ([typeof global, typeof process, typeof Buffer, typeof require, typeof setImmediate].some((type) => type !== 'undefined')) {
+        throw new Error('Node global leaked into challenge');
+      }
+    `),
+  });
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.body.inline, 'ok');
+  assert.equal(response.body.external, 'ok');
+});
+
 test('cookies and storage do not leak between request workers', async () => {
   const first = await request(rsPort, 'POST', '/rs_env', validPayload());
   const second = await request(rsPort, 'POST', '/rs_env', validPayload());

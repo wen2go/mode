@@ -138,6 +138,19 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      - name: 编写中文发布说明
+        run: |
+          printf '%s\n' \
+            '## 本次更新' \
+            '' \
+            '- 补全 Mode 浏览器环境的 DOM 对象标签、构造器和集合描述符，降低普通 JavaScript 对象特征。' \
+            '- `rs_mode_server` 的挑战 Worker 现在隔离 `global`、`process`、`Buffer`、`setImmediate` 等 Node 全局别名，并取消向挑战脚本注入 CommonJS `require`。' \
+            '- 保持 `document.all`、原始 HTML、动态 UA、Cookie、Storage、location/history 与每请求独立 Worker 的兼容行为。' \
+            '' \
+            '## 构建与验证' \
+            '' \
+            '- 已在 macOS ARM64、Windows x64、Linux x64 统一构建，并执行浏览器环境和 rs_mode_server 本地回归测试。' \
+            > release-notes.md
       - name: Create or update the unified release
         run: |
           shopt -s nullglob
@@ -148,8 +161,9 @@ jobs:
             exit 1
           fi
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" --title "$RELEASE_TAG" --notes-file release-notes.md
             gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
           else
             gh release create "$RELEASE_TAG" "${assets[@]}" \
-              --verify-tag --title "$RELEASE_TAG" --notes-from-tag
+              --verify-tag --title "$RELEASE_TAG" --notes-file release-notes.md
           fi

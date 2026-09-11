@@ -46,6 +46,11 @@ const moduleScript = `
   assert.strictEqual(document.querySelector('#app').textContent, 'hello');
   assert.strictEqual(document.querySelector('.ready').id, 'app');
   assert.strictEqual(document.querySelectorAll('body #app').length, 1);
+  assert.strictEqual(Object.prototype.toString.call(document), '[object HTMLDocument]');
+  assert.strictEqual(Object.prototype.toString.call(document.documentElement), '[object HTMLHtmlElement]');
+  assert.strictEqual(Object.prototype.toString.call(document.head), '[object HTMLHeadElement]');
+  assert.strictEqual(Object.prototype.toString.call(document.body), '[object HTMLBodyElement]');
+  assert.deepStrictEqual(Object.keys(document.body), []);
   const divs = document.getElementsByTagName('div');
   assert.strictEqual(divs[0], document.querySelector('#app'));
   assert.strictEqual(divs[0].getAttribute('id'), 'app');
@@ -89,7 +94,7 @@ spawnSyncAndAssert(process.execPath, [
       const { install } = require('node:browser-env');
       install({
         url: 'https://example.test/page?x=1',
-        html: '<html><body><form id="form"><input name="token" value="initial"></form></body></html>',
+        html: '<html><head><!--[if lt IE 9]><script>hidden-script</script><![endif]--><meta id="challenge" content="initial-content"><script src="/challenge.js">initial-script</script></head><body><form id="form"><input name="token" value="initial"></form></body></html>',
         navigator: { userAgent: 'Mozilla/5.0 ModeTest' },
       });
 
@@ -109,7 +114,17 @@ spawnSyncAndAssert(process.execPath, [
       assert(document instanceof Document);
       assert(document.body instanceof HTMLElement);
       assert(document.createTextNode('text') instanceof Text);
-      assert.strictEqual(Object.prototype.toString.call(document.getElementsByTagName('input')), '[object HTMLCollection]');
+      const inputs = document.getElementsByTagName('input');
+      assert.strictEqual(Object.prototype.toString.call(inputs), '[object HTMLCollection]');
+      assert(inputs instanceof HTMLCollection);
+      assert.strictEqual(inputs.constructor, HTMLCollection);
+      assert.deepStrictEqual(Object.keys(inputs), ['0']);
+      assert.strictEqual(Object.prototype.toString.call(document), '[object HTMLDocument]');
+      assert.strictEqual(Object.prototype.toString.call(document.head), '[object HTMLHeadElement]');
+      assert.strictEqual(Object.prototype.toString.call(document.body), '[object HTMLBodyElement]');
+      assert.deepStrictEqual(Object.keys(document), []);
+      assert.deepStrictEqual(Object.keys(document.body), []);
+      assert.deepStrictEqual(Object.keys(navigator.mimeTypes), ['0', '1']);
       assert.deepStrictEqual(document.createExpression(), Object.create(null));
 
       const anchor = document.createElement('a');
@@ -117,6 +132,22 @@ spawnSyncAndAssert(process.execPath, [
       assert(anchor instanceof HTMLAnchorElement);
       assert.strictEqual(anchor.href, 'https://example.test/next?q=1#hash');
       assert.strictEqual(anchor.host, 'example.test');
+
+      const meta = document.querySelector('#challenge');
+      assert(meta instanceof HTMLMetaElement);
+      assert.strictEqual(Object.prototype.toString.call(meta), '[object HTMLMetaElement]');
+      assert.strictEqual(meta.content, 'initial-content');
+      meta.content = 'updated-content';
+      assert.strictEqual(meta.getAttribute('content'), 'updated-content');
+      const script = document.querySelector('script');
+      assert(script instanceof HTMLScriptElement);
+      assert.strictEqual(Object.prototype.toString.call(script), '[object HTMLScriptElement]');
+      assert.strictEqual(script.innerText, 'initial-script');
+      script.innerText = 'updated-script';
+      assert.strictEqual(script.textContent, 'updated-script');
+      assert.strictEqual(script.src, 'https://example.test/challenge.js');
+      assert.strictEqual(document.getElementsByTagName('script').length, 1);
+
       const form = document.querySelector('#form');
       assert(form instanceof HTMLFormElement);
       assert.strictEqual(form.elements.namedItem('token').value, 'initial');
@@ -158,11 +189,27 @@ spawnSyncAndAssert(process.execPath, [
       assert.strictEqual(typeof webkitRequestFileSystem, 'function');
 
       assert.strictEqual(document.all[0], document.documentElement);
-      assert.strictEqual(document.all[3], form);
+      assert.strictEqual(document.all.form, form);
     })().catch((error) => {
       console.error(error.stack);
       process.exitCode = 1;
     });
+  `,
+], { status: 0, stderr: '' });
+
+spawnSyncAndAssert(process.execPath, [
+  '-e',
+  `
+    const assert = require('node:assert');
+    const { install } = require('node:browser-env');
+    install({ url: 'https://example.test/', hideNodeGlobals: true });
+    assert.deepStrictEqual(
+      new Function('return [typeof global, typeof process, typeof Buffer, typeof require, typeof module, typeof exports, typeof __dirname, typeof __filename, typeof setImmediate, typeof clearImmediate].join(\",\")')(),
+      'undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined',
+    );
+    for (const name of ['global', 'process', 'Buffer', 'require', 'module', 'exports', '__dirname', '__filename', 'setImmediate', 'clearImmediate']) {
+      assert.strictEqual(Object.getOwnPropertyDescriptor(globalThis, name), undefined);
+    }
   `,
 ], { status: 0, stderr: '' });
 

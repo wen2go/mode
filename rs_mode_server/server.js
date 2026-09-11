@@ -146,6 +146,9 @@ function installBrowserEnvironment({ html, url, ua }) {
   install({
     url,
     html,
+    // A challenge runs through new Function below, so it has no CommonJS
+    // lexical bindings. Remove Node-only globals from that Worker Realm too.
+    hideNodeGlobals: true,
     navigator: {
       userAgent: ua,
       platform: 'Win32',
@@ -198,8 +201,8 @@ async function generateCookie(payload, options) {
   const outJs = await loadOutJs(outJsUrl, ua, url, options);
 
   installBrowserEnvironment({ html, url, ua });
-  const executeChallenge = new Function('require', `${challenge.inlineCode}\n${outJs.content}`);
-  const result = executeChallenge(require);
+  const executeChallenge = new Function(`${challenge.inlineCode}\n${outJs.content}`);
+  const result = executeChallenge();
   if (result && typeof result.then === 'function') await result;
 
   return {

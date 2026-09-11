@@ -16,9 +16,9 @@ Download the archive that matches the host CPU from [GitHub Releases][mode-relea
 
 | Platform | Unified release | Archive |
 | --- | --- | --- |
-| macOS Apple Silicon (ARM64) | [mode_20260911_v22.0.5][mode-release] | `mode_mac_arm_20260911_v22.0.5.tar.gz` |
-| Windows x64 | [mode_20260911_v22.0.5][mode-release] | `mode_win_x64_20260911_v22.0.5.zip` |
-| Linux x64 | [mode_20260911_v22.0.5][mode-release] | `mode_linux_x64_20260911_v22.0.5.tar.gz` |
+| macOS Apple Silicon (ARM64) | [mode_20260912_v22.0.6][mode-release] | `mode_mac_arm_20260912_v22.0.6.tar.gz` |
+| Windows x64 | [mode_20260912_v22.0.6][mode-release] | `mode_win_x64_20260912_v22.0.6.zip` |
+| Linux x64 | [mode_20260912_v22.0.6][mode-release] | `mode_linux_x64_20260912_v22.0.6.tar.gz` |
 
 On macOS or Linux, extract the archive and place `mode` on `PATH`:
 
@@ -1090,7 +1090,7 @@ additions comply with the project’s license guidelines.
 [Code of Conduct]: https://github.com/nodejs/admin/blob/HEAD/CODE_OF_CONDUCT.md
 [Contributing to the project]: CONTRIBUTING.md
 [browser-env-api]: doc/api/browser-env.md
-[mode-release]: https://github.com/wen2go/mode/releases/tag/mode_20260911_v22.0.5
+[mode-release]: https://github.com/wen2go/mode/releases/tag/mode_20260912_v22.0.6
 [mode-releases]: https://github.com/wen2go/mode/releases
 [Node.js website]: https://nodejs.org/
 [OpenJS Foundation]: https://openjsf.org/
