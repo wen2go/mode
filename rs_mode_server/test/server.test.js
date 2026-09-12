@@ -117,7 +117,7 @@ test('challenge workers expose browser globals without Node global aliases', asy
     ...validPayload(),
     html: fixtureHtml.replace('var $_ = { fixture: true };', `
       var $_ = { fixture: true };
-      if ([typeof global, typeof process, typeof Buffer, typeof require, typeof setImmediate].some((type) => type !== 'undefined')) {
+      if ([typeof global, typeof process, typeof require, typeof setImmediate].some((type) => type !== 'undefined')) {
         throw new Error('Node global leaked into challenge');
       }
     `),

@@ -204,10 +204,11 @@ spawnSyncAndAssert(process.execPath, [
     const { install } = require('node:browser-env');
     install({ url: 'https://example.test/', hideNodeGlobals: true });
     assert.deepStrictEqual(
-      new Function('return [typeof global, typeof process, typeof Buffer, typeof require, typeof module, typeof exports, typeof __dirname, typeof __filename, typeof setImmediate, typeof clearImmediate].join(\",\")')(),
-      'undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined',
+      new Function('return [typeof global, typeof process, typeof require, typeof module, typeof exports, typeof __dirname, typeof __filename, typeof setImmediate, typeof clearImmediate].join(\",\")')(),
+      'undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined',
     );
-    for (const name of ['global', 'process', 'Buffer', 'require', 'module', 'exports', '__dirname', '__filename', 'setImmediate', 'clearImmediate']) {
+    assert.strictEqual(typeof Buffer, 'function');
+    for (const name of ['global', 'process', 'require', 'module', 'exports', '__dirname', '__filename', 'setImmediate', 'clearImmediate']) {
       assert.strictEqual(Object.getOwnPropertyDescriptor(globalThis, name), undefined);
     }
   `,

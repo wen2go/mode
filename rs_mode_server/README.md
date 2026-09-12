@@ -49,10 +49,12 @@ environment with the supplied URL, original HTML, dynamic user agent, DOM,
 basic XHR state transitions, base navigator values (including connection,
 mimeTypes, battery, and beacon APIs), screen dimensions, window dimensions, and
 hidden document visibility. The Worker also removes the Node-only global aliases
-`global`, `process`, `Buffer`, `require`, `module`, `exports`, `__dirname`,
-`__filename`, `setImmediate`, and `clearImmediate`; challenge code is evaluated
-without a CommonJS `require` parameter. External `r="m"` scripts are cached
-under `out_js/`; the cache is ignored by Git.
+`global`, `process`, `require`, `module`, `exports`, `__dirname`,
+`__filename`, `setImmediate`, and `clearImmediate`. `Buffer` stays available
+for compatibility with existing challenge code; it does not cross Worker
+boundaries. Challenge code is evaluated without a CommonJS `require` parameter.
+External `r="m"` scripts are cached under `out_js/`; the cache is ignored by
+Git.
 
 ## Strict compatibility boundary
 

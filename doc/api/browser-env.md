@@ -54,8 +54,8 @@ installed browser environment.
   * `localStorage` {Object} Optional initial local storage values.
   * `sessionStorage` {Object} Optional initial session storage values.
   * `hideNodeGlobals` {boolean} When `true`, removes the configurable Node-only
-    global aliases `global`, `process`, `Buffer`, `require`, `module`,
-    `exports`, `__dirname`, `__filename`, `setImmediate`, and `clearImmediate`
+    global aliases `global`, `process`, `require`, `module`, `exports`,
+    `__dirname`, `__filename`, `setImmediate`, and `clearImmediate`
     from this Realm after installation. Use it when browser challenge code is
     evaluated through a separate function; it is `false` by default so normal
     Mode scripts retain their Node entry points.
