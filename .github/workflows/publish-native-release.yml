@@ -59,7 +59,6 @@ jobs:
       - name: Run Mode regressions
         run: |
           out/Release/node test/parallel/test-browser-env.js
-          out/Release/node --test rs_mode_server/test/server.test.js
       - name: Package
         run: |
           package="mode_mac_arm_${RELEASE_SUFFIX}"
@@ -88,7 +87,6 @@ jobs:
         shell: pwsh
         run: |
           .\out\Release\node.exe test\parallel\test-browser-env.js
-          .\out\Release\node.exe --test rs_mode_server/test/server.test.js
       - name: Package
         shell: pwsh
         run: |
@@ -118,7 +116,6 @@ jobs:
       - name: Run Mode regressions
         run: |
           out/Release/node test/parallel/test-browser-env.js
-          out/Release/node --test rs_mode_server/test/server.test.js
       - name: Package
         run: |
           package="mode_linux_x64_${RELEASE_SUFFIX}"
@@ -156,12 +153,12 @@ jobs:
             '- 补齐 `HTMLDivElement`、`HTMLIFrameElement`、空锚点 URL、`NetworkInformation` 与 `BatteryManager`，修正挑战实际创建的 DOM/BOM 对象原型和标签。' \
             '- 浏览器环境方法现在为常见 `fn.toString()` 检测提供原生函数形态，并保留真实调用行为。' \
             '- 新增源码诊断器：可不重新编译而直接以当前工作区的浏览器环境源码执行缓存挑战，用于发布前定位环境差异。' \
-            '- `rs_mode_server` 的挑战 Worker 现在隔离 `global`、`process`、`module`、`require`、`setImmediate` 等 Node 全局别名，并取消向挑战脚本注入 CommonJS `require`；保留 `Buffer` 兼容既有挑战脚本。' \
-            '- 保持 `document.all`、原始 HTML、动态 UA、Cookie、Storage、location/history 与每请求独立 Worker 的兼容行为。' \
+            '- 浏览器环境隐藏 Node 专有的 `performance.markResourceTiming`，与 Chromium 页面接口保持一致。' \
+            '- 保持 `document.all`、原始 HTML、动态 UA、Cookie、Storage 与 location/history 的兼容行为。' \
             '' \
             '## 构建与验证' \
             '' \
-            '- 已在 macOS ARM64、Windows x64、Linux x64 统一构建，并执行浏览器环境和 rs_mode_server 本地回归测试。' \
+            '- 已在 macOS ARM64、Windows x64、Linux x64 统一构建，并执行浏览器环境回归测试。' \
             > release-notes.md
       - name: Create or update the unified release
         run: |

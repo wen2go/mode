@@ -56,6 +56,7 @@ const moduleScript = `
   assert.strictEqual(divs[0].getAttribute('id'), 'app');
   assert.strictEqual(navigator.userAgent, 'TestBrowser/1.0');
   assert.strictEqual(navigator.platform, 'TestOS');
+  assert.strictEqual(typeof performance.markResourceTiming, 'undefined');
   assert.deepStrictEqual(navigator.languages, ['zh-CN', 'zh']);
   assert.strictEqual(window.customFlag, true);
   assert.strictEqual(document.visibilityState, 'hidden');
