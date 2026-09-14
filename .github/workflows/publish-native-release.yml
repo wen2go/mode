@@ -34,7 +34,7 @@ jobs:
             node_suffix='-pre'
           fi
           node_version="v${node_major}.${node_minor}.${node_patch}${node_suffix}"
-          tag_pattern="^mode_[0-9]{8}_${node_version//./\\.}$"
+          tag_pattern="^mode_[0-9]{8}_${node_version//./\\.}(-r[1-9][0-9]*)?$"
           if [[ ! "$RELEASE_TAG" =~ $tag_pattern ]]; then
             echo "Release tag must use mode_YYYYmmdd_${node_version}: $RELEASE_TAG" >&2
             exit 1
@@ -104,7 +104,7 @@ jobs:
   linux-x64:
     needs: validate-release-tag
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    timeout-minutes: 180
     env:
       RELEASE_SUFFIX: ${{ needs.validate-release-tag.outputs.release_suffix }}
     steps:
