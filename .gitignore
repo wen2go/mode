@@ -183,3 +183,4 @@ compile_commands.json
 !.devcontainer/base/
 !.devcontainer/base/devcontainer.json
 /rs_mode_server.zip
+/rs_mode_server/

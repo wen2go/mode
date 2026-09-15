@@ -150,11 +150,11 @@ jobs:
           printf '%s\n' \
             '## 本次更新' \
             '' \
-            '- 补齐 `HTMLDivElement`、`HTMLIFrameElement`、空锚点 URL、`NetworkInformation` 与 `BatteryManager`，修正挑战实际创建的 DOM/BOM 对象原型和标签。' \
-            '- 浏览器环境方法现在为常见 `fn.toString()` 检测提供原生函数形态，并保留真实调用行为。' \
-            '- 新增源码诊断器：可不重新编译而直接以当前工作区的浏览器环境源码执行缓存挑战，用于发布前定位环境差异。' \
-            '- 浏览器环境隐藏 Node 专有的 `performance.markResourceTiming`，与 Chromium 页面接口保持一致。' \
-            '- 保持 `document.all`、原始 HTML、动态 UA、Cookie、Storage 与 location/history 的兼容行为。' \
+            '- Cookie 容器补齐 Path、Domain、Secure、Expires 与 Max-Age，临时挑战 Cookie 可按浏览器规则过期删除。' \
+            '- 保留 `</html>` 后的页面节点和脚本，并补齐 `document.readyState`、`document.currentScript` 等生命周期基础状态。' \
+            '- 本地挑战执行器可据此按 DOM 顺序运行内联、外链和尾部 `r=m` 脚本，并共享浏览器全局状态。' \
+            '- 隐藏 Node 的 `Buffer` 等专有全局；预初始化浏览器命名 WebSocket 接口，避免惰性加载时暴露 Node 特征。' \
+            '- 保持 `document.all`、原始 HTML、动态 UA、Storage 与 location/history 的兼容行为。' \
             '' \
             '## 构建与验证' \
             '' \

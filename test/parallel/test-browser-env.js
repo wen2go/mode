@@ -90,6 +90,99 @@ spawnSyncAndAssert(process.execPath, ['-e', moduleScript], { status: 0, stderr: 
 spawnSyncAndAssert(process.execPath, [
   '-e',
   `
+    const assert = require('node:assert');
+    const { install } = require('node:browser-env');
+
+    install({
+      url: 'https://sub.example.test/a/b/page',
+      html: '<html><head></head><body><main id="inside-html">inside</main></body></html><script id="after-html">window.afterHtmlScript = true;</script><div id="after-html-node">tail</div>',
+    });
+
+    function cookies() {
+      return document.cookie === '' ? [] : document.cookie.split('; ').sort();
+    }
+
+    function expectCookies(...expected) {
+      assert.deepStrictEqual(cookies(), expected.sort());
+    }
+
+    assert.strictEqual(document.readyState, 'complete');
+    assert.strictEqual(document.currentScript, null);
+    assert.strictEqual(document.querySelector('#inside-html').textContent, 'inside');
+    assert.strictEqual(document.querySelector('#after-html').textContent,
+                       'window.afterHtmlScript = true;');
+    assert.strictEqual(document.querySelector('#after-html-node').textContent, 'tail');
+    assert.strictEqual(document.getElementsByTagName('script').length, 1);
+
+    document.cookie = 'hostOnly=one; Path=/';
+    document.cookie = 'domainCookie=shared; Domain=example.test; Path=/';
+    expectCookies('domainCookie=shared', 'hostOnly=one');
+
+    location.href = 'https://example.test/a/b/page';
+    expectCookies('domainCookie=shared');
+    location.href = 'https://sub.example.test/a/b/page';
+    expectCookies('domainCookie=shared', 'hostOnly=one');
+
+    document.cookie = 'root=root; Path=/';
+    document.cookie = 'pathA=a; Path=/a';
+    document.cookie = 'pathB=b; Path=/a/b';
+    document.cookie = 'secureCookie=secure; Secure; Path=/';
+    expectCookies(
+      'domainCookie=shared',
+      'hostOnly=one',
+      'pathA=a',
+      'pathB=b',
+      'root=root',
+      'secureCookie=secure',
+    );
+
+    history.pushState(null, '', '/a/other');
+    expectCookies(
+      'domainCookie=shared',
+      'hostOnly=one',
+      'pathA=a',
+      'root=root',
+      'secureCookie=secure',
+    );
+    history.pushState(null, '', '/other');
+    expectCookies(
+      'domainCookie=shared',
+      'hostOnly=one',
+      'root=root',
+      'secureCookie=secure',
+    );
+
+    location.href = 'http://sub.example.test/a/b/page';
+    expectCookies(
+      'domainCookie=shared',
+      'hostOnly=one',
+      'pathA=a',
+      'pathB=b',
+      'root=root',
+    );
+    document.cookie = 'insecureSecure=ignored; Secure; Path=/';
+    assert(!cookies().includes('insecureSecure=ignored'));
+
+    location.href = 'https://sub.example.test/a/b/page';
+    assert(cookies().includes('secureCookie=secure'));
+    assert(!cookies().includes('insecureSecure=ignored'));
+
+    document.cookie = 'deleteByAge=first; Path=/';
+    document.cookie = 'deleteByAge=second; Path=/; Max-Age=0';
+    document.cookie = 'deleteByExpiry=first; Path=/';
+    document.cookie = 'deleteByExpiry=second; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'maxAgeWins=first; Path=/; Max-Age=0; Expires=Wed, 31 Dec 2999 23:59:59 GMT';
+    document.cookie = 'futureExpiry=live; Path=/; Expires=Wed, 31 Dec 2999 23:59:59 GMT';
+    assert(!cookies().includes('deleteByAge=second'));
+    assert(!cookies().includes('deleteByExpiry=second'));
+    assert(!cookies().includes('maxAgeWins=first'));
+    assert(cookies().includes('futureExpiry=live'));
+  `,
+], { status: 0, stderr: '' });
+
+spawnSyncAndAssert(process.execPath, [
+  '-e',
+  `
     (async () => {
       const assert = require('node:assert');
       const { install } = require('node:browser-env');
@@ -227,11 +320,12 @@ spawnSyncAndAssert(process.execPath, [
     const { install } = require('node:browser-env');
     install({ url: 'https://example.test/', hideNodeGlobals: true });
     assert.deepStrictEqual(
-      new Function('return [typeof global, typeof process, typeof require, typeof module, typeof exports, typeof __dirname, typeof __filename, typeof setImmediate, typeof clearImmediate].join(\",\")')(),
-      'undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined',
+      new Function('return [typeof Buffer, typeof global, typeof process, typeof require, typeof module, typeof exports, typeof __dirname, typeof __filename, typeof setImmediate, typeof clearImmediate].join(\",\")')(),
+      'undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined',
     );
-    assert.strictEqual(typeof Buffer, 'function');
-    for (const name of ['global', 'process', 'require', 'module', 'exports', '__dirname', '__filename', 'setImmediate', 'clearImmediate']) {
+    assert.strictEqual(typeof Buffer, 'undefined');
+    assert.strictEqual(typeof WebSocket, 'function');
+    for (const name of ['Buffer', 'global', 'process', 'require', 'module', 'exports', '__dirname', '__filename', 'setImmediate', 'clearImmediate']) {
       assert.strictEqual(Object.getOwnPropertyDescriptor(globalThis, name), undefined);
     }
   `,
@@ -249,6 +343,14 @@ spawnSyncAndAssert(process.execPath, [
     assert.strictEqual(typeof globalThis.document, 'undefined');
     assert.throws(
       () => install({ url: 'https://example.test/', document: { descriptors: { createElement: { value: null } } } }),
+      /protected browser environment property/,
+    );
+    assert.throws(
+      () => install({ url: 'https://example.test/', document: { properties: { currentScript: null } } }),
+      /protected browser environment property/,
+    );
+    assert.throws(
+      () => install({ url: 'https://example.test/', document: { descriptors: { readyState: { value: 'loading' } } } }),
       /protected browser environment property/,
     );
     assert.throws(
