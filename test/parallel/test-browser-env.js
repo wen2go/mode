@@ -60,6 +60,12 @@ const moduleScript = `
   assert.deepStrictEqual(navigator.languages, ['zh-CN', 'zh']);
   assert.strictEqual(window.customFlag, true);
   assert.strictEqual(document.visibilityState, 'hidden');
+  const visibilityStateDescriptor = Object.getOwnPropertyDescriptor(
+    Object.getPrototypeOf(document), 'visibilityState');
+  assert.strictEqual(visibilityStateDescriptor.enumerable, true);
+  assert.strictEqual(visibilityStateDescriptor.set, undefined);
+  document.visibilityState = 'visible';
+  assert.strictEqual(document.visibilityState, 'hidden');
   assert.strictEqual(document.challengeValue, 'challenge');
   document.mutableValue = 'updated';
   assert.strictEqual(document.mutableValue, 'updated');
@@ -80,12 +86,48 @@ const moduleScript = `
   assert.strictEqual(location.pathname, '/next');
   document.cookie = 'token=value; Path=/';
   assert.strictEqual(document.cookie, 'token=value');
+  assert.strictEqual(document._cookieJar, undefined);
+  assert.deepStrictEqual(
+    Object.getOwnPropertyNames(document).filter((name) => name.startsWith('_')),
+    [],
+  );
+  assert.strictEqual(document._body, undefined);
+  assert.strictEqual(document._location, undefined);
   localStorage.setItem('key', 'value');
   assert.strictEqual(localStorage.getItem('key'), 'value');
+  assert.strictEqual(localStorage._values, undefined);
+  assert.strictEqual(sessionStorage._values, undefined);
   assert.throws(() => env.install({ url: 'https://again.test/' }), /already installed/);
 `;
 
 spawnSyncAndAssert(process.execPath, ['-e', moduleScript], { status: 0, stderr: '' });
+
+spawnSyncAndAssert(process.execPath, [
+  '-e',
+  `
+    const assert = require('node:assert');
+    const { install } = require('node:browser-env');
+    const script = 'if (1 < 2) { window.comparison = "<ok>"; }';
+
+    install({
+      url: 'https://example.test/',
+      html: '<html><head><script id="comparison">' + script + '</script></head><body></body></html>',
+    });
+
+    assert.strictEqual(document.querySelector('#comparison').textContent, script);
+    assert.deepStrictEqual(Object.getOwnPropertyNames(document), ['location']);
+    assert.deepStrictEqual(Object.keys(document), ['location']);
+    const locationDescriptor = Object.getOwnPropertyDescriptor(document, 'location');
+    assert.strictEqual(locationDescriptor.configurable, false);
+    assert.strictEqual(locationDescriptor.enumerable, true);
+    assert.strictEqual(typeof locationDescriptor.get, 'function');
+    assert.strictEqual(typeof locationDescriptor.set, 'function');
+    assert.strictEqual(document.hidden, false);
+    assert.strictEqual(document.referrer, '');
+    document.referrer = 'https://ignored.example.test/';
+    assert.strictEqual(document.referrer, '');
+  `,
+], { status: 0, stderr: '' });
 
 spawnSyncAndAssert(process.execPath, [
   '-e',
@@ -186,7 +228,9 @@ spawnSyncAndAssert(process.execPath, [
     (async () => {
       const assert = require('node:assert');
       const { install } = require('node:browser-env');
+      const lifecycleState = {};
       install({
+        browserEnvLifecycleState: lifecycleState,
         url: 'https://example.test/page?x=1',
         html: '<html><head><!--[if lt IE 9]><script>hidden-script</script><![endif]--><meta id="challenge" content="initial-content"><script src="/challenge.js">initial-script</script></head><body><form id="form"><input name="token" value="initial"></form></body></html>',
         navigator: { userAgent: 'Mozilla/5.0 ModeTest' },
@@ -205,6 +249,14 @@ spawnSyncAndAssert(process.execPath, [
       assert.deepStrictEqual(Object.keys(navigator.connection), []);
       assert.strictEqual(navigator.mimeTypes.length, 2);
       assert.strictEqual(navigator.mimeTypes.namedItem('application/pdf').suffixes, 'pdf');
+      assert(navigator.plugins instanceof PluginArray);
+      assert.strictEqual(Object.prototype.toString.call(navigator.plugins), '[object PluginArray]');
+      assert.deepStrictEqual(Object.keys(navigator.plugins), ['0', '1', '2', '3', '4']);
+      const pdfPlugin = navigator.plugins.namedItem('PDF Viewer');
+      assert(pdfPlugin instanceof Plugin);
+      assert.strictEqual(Object.prototype.toString.call(pdfPlugin), '[object Plugin]');
+      assert.strictEqual(pdfPlugin.length, 2);
+      assert.strictEqual(navigator.mimeTypes[0].enabledPlugin, pdfPlugin);
       assert.strictEqual(navigator.sendBeacon('/beacon', 'body'), true);
       assert.strictEqual(String(navigator.getBattery), 'function getBattery() { [native code] }');
       const battery = await navigator.getBattery();
@@ -226,10 +278,20 @@ spawnSyncAndAssert(process.execPath, [
       assert.deepStrictEqual(Object.keys(document), []);
       assert.deepStrictEqual(Object.keys(document.body), []);
       assert.deepStrictEqual(Object.keys(navigator.mimeTypes), ['0', '1']);
-      assert.deepStrictEqual(document.createExpression(), Object.create(null));
+      assert.strictEqual(
+        Object.prototype.toString.call(navigator.webkitPersistentStorage),
+        '[object DeprecatedStorageQuota]',
+      );
+      const expression = document.createExpression('//*', null);
+      assert(expression instanceof XPathExpression);
+      assert.strictEqual(expression.constructor, XPathExpression);
+      assert.strictEqual(Object.prototype.toString.call(expression), '[object XPathExpression]');
+      assert.deepStrictEqual(Object.getOwnPropertyNames(expression), []);
+      assert.throws(() => new XPathExpression(), /Illegal constructor/);
 
       const anchor = document.createElement('a');
       assert.strictEqual(anchor.href, '');
+      assert.strictEqual(anchor.protocol, ':');
       anchor.href = '/next?q=1#hash';
       assert(anchor instanceof HTMLAnchorElement);
       assert.strictEqual(anchor.href, 'https://example.test/next?q=1#hash');
@@ -270,7 +332,13 @@ spawnSyncAndAssert(process.execPath, [
 
       const canvas = document.createElement('canvas');
       assert(canvas instanceof HTMLCanvasElement);
-      assert(canvas.getContext('2d') instanceof CanvasRenderingContext2D);
+      const context = canvas.getContext('2d');
+      assert(context instanceof CanvasRenderingContext2D);
+      context.fillStyle = 'red';
+      context.fillRect(0, 0, 1, 1);
+      const image = context.getImageData(0, 0, 1, 1);
+      assert.deepStrictEqual([...image.data], [255, 0, 0, 255]);
+      assert.strictEqual(Object.prototype.toString.call(image), '[object ImageData]');
       assert.strictEqual(canvas.toDataURL(), 'data:,');
 
       const parsed = new DOMParser().parseFromString('<html><body><p id="parsed">ok</p></body></html>', 'text/html');
@@ -295,7 +363,56 @@ spawnSyncAndAssert(process.execPath, [
       assert.strictEqual(observer.takeRecords().length, 0);
       observer.disconnect();
       assert.strictEqual(observed, false);
-      assert.strictEqual(indexedDB.open('mode-test').result.name, 'mode-test');
+      const databaseEvents = [];
+      const databaseRequest = indexedDB.open('mode-test');
+      assert(databaseRequest instanceof IDBOpenDBRequest);
+      assert.strictEqual(Object.prototype.toString.call(databaseRequest), '[object IDBOpenDBRequest]');
+      assert.strictEqual(databaseRequest.readyState, 'pending');
+      databaseEvents.push('after-open');
+      let objectStoreNames;
+      databaseRequest.onupgradeneeded = () => {
+        databaseRequest.result.createObjectStore('later');
+        databaseRequest.result.createObjectStore('first', { keyPath: 'name' });
+        objectStoreNames = databaseRequest.result.objectStoreNames;
+        databaseEvents.push('upgrade');
+      };
+      databaseRequest.onsuccess = () => databaseEvents.push('success');
+      await Promise.resolve();
+      databaseEvents.push('microtask');
+      await lifecycleState.waitForBrowserTasks();
+      assert.deepStrictEqual(databaseEvents, ['after-open', 'microtask', 'upgrade', 'success']);
+      assert.strictEqual(databaseRequest.readyState, 'done');
+      assert(databaseRequest.result instanceof IDBDatabase);
+      assert.strictEqual(databaseRequest.result.name, 'mode-test');
+      assert(objectStoreNames instanceof DOMStringList);
+      assert.strictEqual(Object.prototype.toString.call(objectStoreNames), '[object DOMStringList]');
+      assert.deepStrictEqual(Object.keys(objectStoreNames), ['0', '1']);
+      assert.strictEqual(objectStoreNames.length, 2);
+      assert.strictEqual(objectStoreNames.item(0), 'first');
+      assert.strictEqual(objectStoreNames.contains('later'), true);
+      assert.strictEqual(objectStoreNames.contains('missing'), false);
+      const objectStore = databaseRequest.result.transaction(['first'], 'readwrite').objectStore('first');
+      assert(objectStore instanceof IDBObjectStore);
+      assert.strictEqual(Object.prototype.toString.call(objectStore), '[object IDBObjectStore]');
+      const putRequest = objectStore.put({ name: 'key', vlaue: 'stored' });
+      assert(putRequest instanceof IDBRequest);
+      assert.strictEqual(Object.prototype.toString.call(putRequest), '[object IDBRequest]');
+      await new Promise((resolve, reject) => {
+        putRequest.onerror = () => reject(putRequest.error);
+        putRequest.onsuccess = (event) => {
+          assert.strictEqual(event.target, putRequest);
+          resolve();
+        };
+      });
+      const getRequest = databaseRequest.result.transaction(['first']).objectStore('first').get('key');
+      const storedRecord = await new Promise((resolve, reject) => {
+        getRequest.onerror = () => reject(getRequest.error);
+        getRequest.onsuccess = (event) => {
+          assert.strictEqual(event.target, getRequest);
+          resolve(event.target.result);
+        };
+      });
+      assert.strictEqual(storedRecord.vlaue, 'stored');
       assert.strictEqual(chrome.app.isInstalled, false);
       assert.strictEqual(typeof chrome.loadTimes, 'function');
       assert.strictEqual(msCrypto, globalThis.crypto);
@@ -314,20 +431,64 @@ spawnSyncAndAssert(process.execPath, [
 ], { status: 0, stderr: '' });
 
 spawnSyncAndAssert(process.execPath, [
+  '--expose-internals',
   '-e',
   `
     const assert = require('node:assert');
     const { install } = require('node:browser-env');
     install({ url: 'https://example.test/', hideNodeGlobals: true });
     assert.deepStrictEqual(
-      new Function('return [typeof Buffer, typeof global, typeof process, typeof require, typeof module, typeof exports, typeof __dirname, typeof __filename, typeof setImmediate, typeof clearImmediate].join(\",\")')(),
-      'undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined',
+      new Function('return [typeof Buffer, typeof global, typeof process, typeof require, typeof module, typeof exports, typeof __dirname, typeof __filename, typeof setImmediate, typeof clearImmediate, typeof internalBinding, typeof primordials].join(\",\")')(),
+      'undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined',
     );
     assert.strictEqual(typeof Buffer, 'undefined');
     assert.strictEqual(typeof WebSocket, 'function');
-    for (const name of ['Buffer', 'global', 'process', 'require', 'module', 'exports', '__dirname', '__filename', 'setImmediate', 'clearImmediate']) {
+    assert.deepStrictEqual(
+      Object.getOwnPropertyNames(WebSocket),
+      ['length', 'name', 'prototype', 'CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'],
+    );
+    assert.strictEqual(Object.getOwnPropertyDescriptor(WebSocket, 'toString'), undefined);
+    assert.strictEqual(WebSocket.prototype.constructor, WebSocket);
+    assert.deepStrictEqual(
+      Object.getOwnPropertyNames(WebSocket.prototype),
+      [
+        'constructor', 'url', 'readyState', 'bufferedAmount', 'extensions',
+        'protocol', 'onopen', 'onerror', 'onclose', 'onmessage', 'binaryType',
+        'CONNECTING', 'OPEN', 'CLOSING', 'CLOSED', 'close', 'send',
+      ],
+    );
+    assert.strictEqual(Object.prototype.toString.call(WebSocket.prototype), '[object WebSocket]');
+    assert.match(Function.prototype.toString.call(WebSocket), /native code/);
+    const socket = new WebSocket('wss://example.test/');
+    assert.strictEqual(socket.readyState, WebSocket.CONNECTING);
+    assert.throws(() => WebSocket('wss://example.test/'), /new/);
+    assert.deepStrictEqual(Object.getOwnPropertyNames(Request), ['length', 'name', 'prototype']);
+    assert.strictEqual(Object.getOwnPropertyDescriptor(Request, 'toString'), undefined);
+    assert.strictEqual(Request.prototype.constructor, Request);
+    assert.strictEqual(Object.prototype.toString.call(Request.prototype), '[object Request]');
+    assert.match(Function.prototype.toString.call(Request), /native code/);
+    const request = new Request('https://example.test/path', { method: 'post' });
+    assert.strictEqual(request.method, 'POST');
+    assert.strictEqual(request.url, 'https://example.test/path');
+    assert.throws(() => Request('https://example.test/'), /new/);
+    for (const name of [
+      'Buffer', 'global', 'process', 'require', 'module', 'exports',
+      '__dirname', '__filename', 'setImmediate', 'clearImmediate',
+      'internalBinding', 'primordials', 'assert', 'async_hooks', 'buffer',
+      'child_process', 'cluster', 'constants', 'dgram',
+      'diagnostics_channel', 'dns', 'domain', 'events', 'fs', 'http',
+      'http2', 'https', 'net', 'os', 'path', 'perf_hooks', 'punycode',
+      'querystring', 'readline', 'repl', 'stream', 'string_decoder', 'sys',
+      'timers', 'tls', 'trace_events', 'tty', 'url', 'util', 'v8', 'vm',
+      'wasi', 'worker_threads', 'zlib', 'node:sea', 'node:sqlite',
+      'node:test',
+    ]) {
       assert.strictEqual(Object.getOwnPropertyDescriptor(globalThis, name), undefined);
     }
+    assert.deepStrictEqual(
+      Reflect.ownKeys(globalThis).map(String).filter((name) => name.startsWith('Symbol(undici.')),
+      [],
+    );
   `,
 ], { status: 0, stderr: '' });
 

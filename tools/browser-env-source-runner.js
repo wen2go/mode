@@ -213,6 +213,41 @@ const readTracer = readTraceEnabled ? `
       for (var name in roots) if (roots[name] === value) return name;
       return null;
     }
+    function tracedRootName(value) {
+      for (var name in roots) {
+        if (roots[name] === value || proxies.get(roots[name]) === value) return name;
+      }
+      return null;
+    }
+    function traceEnumeration(target, key, label) {
+      var original = target[key];
+      Object.defineProperty(target, key, {
+        configurable: true,
+        enumerable: false,
+        value: function() {
+          var name = tracedRootName(arguments[0]);
+          if (name) reads.push(name + '.' + label);
+          var result = Reflect.apply(original, target, arguments);
+          if (label !== 'Reflect.ownKeys' || (name !== 'window' && name !== 'document')) return result;
+          return new Proxy(result, {
+            get: function(list, key) {
+              if (typeof key !== 'symbol') {
+                reads.push(name + '.Reflect.ownKeys.result.' + String(key));
+              }
+              var value = Reflect.get(list, key, list);
+              if (typeof value !== 'function') return value;
+              return function() {
+                if (arguments.length > 0 && typeof arguments[0] !== 'symbol') {
+                  reads.push(name + '.Reflect.ownKeys.result.' + String(key) + '(' + String(arguments[0]) + ')');
+                }
+                return Reflect.apply(value, list, arguments);
+              };
+            },
+          });
+        },
+        writable: true,
+      });
+    }
     function traceRoot(target, name) {
       if (!target || (typeof target !== 'object' && typeof target !== 'function')) return target;
       var existing = proxies.get(target);
@@ -225,12 +260,19 @@ const readTracer = readTraceEnabled ? `
           var value = Reflect.get(target, key, target);
           var nestedName = rootName(value);
           if (nestedName) return traceRoot(value, nestedName);
+          // Storage now keeps its backing map outside the page-visible object.
+          // Bind its methods to the raw target so this diagnostic proxy does not
+          // turn an ordinary storage access into a false missing-state error.
+          if ((name === 'localStorage' || name === 'sessionStorage') && typeof value === 'function') {
+            return function() { return Reflect.apply(value, target, arguments); };
+          }
           if (name === 'document' && key === 'getElementById' && typeof value === 'function') {
             return function() {
               var result = Reflect.apply(value, target, arguments);
               return traceRoot(result, name + '.getElementById(' + String(arguments[0]) + ')');
             };
           }
+          if (key === '__proto__') return traceRoot(value, name + '.__proto__');
           if (key === 'removeChild' && typeof value === 'function') {
             return function(child) {
               return Reflect.apply(value, target, [child && child.__modeTraceRaw || child]);
@@ -239,9 +281,16 @@ const readTracer = readTraceEnabled ? `
           if (key === 'parentNode') return traceRoot(value, name + '.parentNode');
           return value;
         },
+        set: function(target, key, value) {
+          return Reflect.set(target, key, value, target);
+        },
         has: function(target, key) {
           if (typeof key !== 'symbol') reads.push(name + '.has:' + String(key));
           return Reflect.has(target, key);
+        },
+        ownKeys: function(target) {
+          reads.push(name + '.ownKeys');
+          return Reflect.ownKeys(target);
         },
       });
       proxies.set(target, proxy);
@@ -256,6 +305,9 @@ const readTracer = readTraceEnabled ? `
       });
     }
     Object.keys(roots).forEach(replaceGlobal);
+    traceEnumeration(Object, 'keys', 'Object.keys');
+    traceEnumeration(Object, 'getOwnPropertyNames', 'Object.getOwnPropertyNames');
+    traceEnumeration(Reflect, 'ownKeys', 'Reflect.ownKeys');
     return { dump: function() { return reads; } };
   })();
 ` : '';
@@ -295,7 +347,7 @@ install({
       ...windowMetrics,
     },
   },
-  document: { properties: { visibilityState: 'hidden' } },
+  document: { properties: { visibilityState: 'visible' } },
 });
 
 const originalConsole = globalThis.console;
@@ -327,7 +379,13 @@ try {
       cookies: (${cookieSummary.toString()})(document.cookie),
     };
     if (${traceEnabled}) Object.assign(result, __modeEnvTrace.dump('source'));
-    if (${readTraceEnabled}) result.readTrace = __modeReadTrace.dump();
+    if (${readTraceEnabled}) {
+      result.readTrace = __modeReadTrace.dump();
+      result.ownKeys = {
+        document: Reflect.ownKeys(document).map(String),
+        window: Reflect.ownKeys(globalThis).map(String),
+      };
+    }
     return result;`)();
   nodeProcess.stdout.write(JSON.stringify(result), () => nodeProcess.exit(0));
 } finally {

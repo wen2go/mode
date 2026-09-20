@@ -8,7 +8,7 @@ Mode 是基于 Node.js 的定制运行时。默认仍可像 Node.js 一样执行
 [`mode_20260914_v22.0.10`](https://github.com/wen2go/mode/releases/tag/mode_20260914_v22.0.10)
 是此前错误使用的历史包名，其中的 `v22.0.10` **不是** Node.js 版本；该包内的
 `mode --version` 仍会输出 `v27.0.0-pre`。后续发布标签将使用真实运行时版本，例如
-`mode_20260914_v27.0.0-pre`。
+`mode_20260920_v27.0.0-pre`。
 
 ## 与官方 Node.js 的区别
 
@@ -24,34 +24,34 @@ Mode 是基于 Node.js 的定制运行时。默认仍可像 Node.js 一样执行
 
 ## 安装与启动
 
-从 [GitHub Releases](https://github.com/wen2go/mode/releases/tag/mode_20260914_v22.0.10)
+从 [GitHub Releases](https://github.com/wen2go/mode/releases/tag/mode_20260920_v27.0.0-pre)
 下载与系统匹配的文件：
 
 | 平台 | 文件 |
 | --- | --- |
-| macOS Apple Silicon | `mode_mac_arm_20260914_v22.0.10.tar.gz` |
-| Linux x64 | `mode_linux_x64_20260914_v22.0.10.tar.gz` |
-| Windows x64 | `mode_win_x64_20260914_v22.0.10.zip` |
+| macOS Apple Silicon | `mode_mac_arm_20260920_v27.0.0-pre.tar.gz` |
+| Linux x64 | `mode_linux_x64_20260920_v27.0.0-pre.tar.gz` |
+| Windows x64 | `mode_win_x64_20260920_v27.0.0-pre.zip` |
 
 macOS/Linux：
 
 ```bash
-tar -xzf mode_linux_x64_20260914_v22.0.10.tar.gz
+tar -xzf mode_linux_x64_20260920_v27.0.0-pre.tar.gz
 mkdir -p "$HOME/.local/bin"
-install -m 755 mode_linux_x64_20260914_v22.0.10/mode "$HOME/.local/bin/mode"
+install -m 755 mode_linux_x64_20260920_v27.0.0-pre/mode "$HOME/.local/bin/mode"
 export PATH="$HOME/.local/bin:$PATH"
 mode -e "console.log(typeof require('node:browser-env').install)"
 mode --version
 ```
 
-macOS Apple Silicon 请把文件和目录名替换为 `mode_mac_arm_20260914_v22.0.10`。
+macOS Apple Silicon 请把文件和目录名替换为 `mode_mac_arm_20260920_v27.0.0-pre`。
 第一条验证命令输出 `function` 即表示当前 shell 正在使用 Mode；当前包的第二条命令
 输出 `v27.0.0-pre`。
 
 Windows：解压 ZIP 后运行：
 
 ```powershell
-.\mode_win_x64_20260914_v22.0.10\mode.exe -e "console.log(typeof require('node:browser-env').install)"
+.\mode_win_x64_20260920_v27.0.0-pre\mode.exe -e "console.log(typeof require('node:browser-env').install)"
 ```
 
 使用 JSON profile 在目标脚本运行前安装浏览器环境：
