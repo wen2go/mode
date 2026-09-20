@@ -275,7 +275,7 @@ spawnSyncAndAssert(process.execPath, [
       assert.strictEqual(Object.prototype.toString.call(document), '[object HTMLDocument]');
       assert.strictEqual(Object.prototype.toString.call(document.head), '[object HTMLHeadElement]');
       assert.strictEqual(Object.prototype.toString.call(document.body), '[object HTMLBodyElement]');
-      assert.deepStrictEqual(Object.keys(document), []);
+      assert.deepStrictEqual(Object.keys(document), ['location']);
       assert.deepStrictEqual(Object.keys(document.body), []);
       assert.deepStrictEqual(Object.keys(navigator.mimeTypes), ['0', '1']);
       assert.strictEqual(
