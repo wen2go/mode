@@ -439,9 +439,10 @@ spawnSyncAndAssert(process.execPath, [
     install({ url: 'https://example.test/', hideNodeGlobals: true });
     assert.deepStrictEqual(
       new Function('return [typeof Buffer, typeof global, typeof process, typeof require, typeof module, typeof exports, typeof __dirname, typeof __filename, typeof setImmediate, typeof clearImmediate, typeof internalBinding, typeof primordials].join(\",\")')(),
-      'undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined',
+      'function,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined',
     );
-    assert.strictEqual(typeof Buffer, 'undefined');
+    assert.strictEqual(typeof Buffer, 'function');
+    assert.strictEqual(Buffer.from('mode').toString(), 'mode');
     assert.strictEqual(typeof WebSocket, 'function');
     assert.deepStrictEqual(
       Object.getOwnPropertyNames(WebSocket),
@@ -472,7 +473,7 @@ spawnSyncAndAssert(process.execPath, [
     assert.strictEqual(request.url, 'https://example.test/path');
     assert.throws(() => Request('https://example.test/'), /new/);
     for (const name of [
-      'Buffer', 'global', 'process', 'require', 'module', 'exports',
+      'global', 'process', 'require', 'module', 'exports',
       '__dirname', '__filename', 'setImmediate', 'clearImmediate',
       'internalBinding', 'primordials', 'assert', 'async_hooks', 'buffer',
       'child_process', 'cluster', 'constants', 'dgram',
@@ -489,6 +490,26 @@ spawnSyncAndAssert(process.execPath, [
       Reflect.ownKeys(globalThis).map(String).filter((name) => name.startsWith('Symbol(undici.')),
       [],
     );
+  `,
+], { status: 0, stderr: '' });
+
+spawnSyncAndAssert(process.execPath, [
+  '--expose-internals',
+  '-e',
+  `
+    const nodeProcess = process;
+    (async () => {
+      const assert = require('node:assert');
+      const { install } = require('node:browser-env');
+      install({ url: 'https://example.test/', hideNodeGlobals: true });
+      assert.strictEqual(typeof Buffer, 'function');
+      const response = await fetch('data:text/plain,mode-probe');
+      assert.strictEqual(response.status, 200);
+      assert.strictEqual(await response.text(), 'mode-probe');
+    })().catch((error) => {
+      console.error(error.stack);
+      nodeProcess.exitCode = 1;
+    });
   `,
 ], { status: 0, stderr: '' });
 

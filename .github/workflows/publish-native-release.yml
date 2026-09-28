@@ -154,7 +154,7 @@ jobs:
             '- 保留 `</html>` 后的页面节点和脚本，并补齐 `document.readyState`、`document.currentScript` 等生命周期基础状态。' \
             '- 本地挑战执行器可据此按 DOM 顺序运行内联、外链和尾部 `r=m` 脚本，并共享浏览器全局状态。' \
             '- 对齐 Chromium 的 `XPathExpression`、`navigator.webkitPersistentStorage` 和空 `href` 锚点 URL 表面，减少挑战脚本的浏览器环境分支差异。' \
-            '- 隐藏 Node 的 `Buffer` 等专有全局；预初始化浏览器命名 WebSocket 接口，避免惰性加载时暴露 Node 特征。' \
+            '- 保留兼容挑战脚本所需的 `Buffer`，同时继续隐藏 `process`、`require` 等 Node 专有全局；`fetch()` 不再因缺失 Buffer 直接失败。' \
             '- 保持 `document.all`、原始 HTML、动态 UA、Storage 与 location/history 的兼容行为。' \
             '' \
             '## 构建与验证' \
