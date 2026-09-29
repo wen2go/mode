@@ -329,6 +329,73 @@ spawnSyncAndAssert(process.execPath, [
       const form = document.querySelector('#form');
       assert(form instanceof HTMLFormElement);
       assert.strictEqual(form.elements.namedItem('token').value, 'initial');
+      assert.strictEqual(form.token, form.elements.namedItem('token'));
+
+      const namedForm = document.createElement('form');
+      const actionInput = document.createElement('input');
+      actionInput.name = 'action';
+      const textContentInput = document.createElement('input');
+      textContentInput.name = 'textContent';
+      const innerTextInput = document.createElement('input');
+      innerTextInput.id = 'innerText';
+      namedForm.appendChild(actionInput);
+      namedForm.appendChild(textContentInput);
+      namedForm.appendChild(innerTextInput);
+      assert.strictEqual(namedForm.action, actionInput);
+      assert.strictEqual(namedForm.textContent, textContentInput);
+      assert.strictEqual(namedForm.innerText, innerTextInput);
+      assert.deepStrictEqual(Object.getOwnPropertyDescriptor(namedForm, 'action'), {
+        configurable: true,
+        enumerable: false,
+        value: actionInput,
+        writable: false,
+      });
+      actionInput.name = 'replacement';
+      assert.strictEqual(namedForm.action, 'https://example.test/page?x=1');
+      assert.strictEqual(namedForm.replacement, actionInput);
+      namedForm.removeChild(textContentInput);
+      assert.strictEqual(namedForm.textContent, '');
+      const elementsInput = document.createElement('input');
+      elementsInput.name = 'elements';
+      namedForm.appendChild(elementsInput);
+      assert.strictEqual(namedForm.elements, elementsInput);
+      elementsInput.name = 'namedElements';
+      assert(namedForm.elements instanceof HTMLCollection);
+      assert.strictEqual(namedForm.namedElements, elementsInput);
+      const parserHost = document.createElement('div');
+      parserHost.innerHTML = '<form id="clobbered"><input name="appendChild">' +
+        '<input name="childNodes"><input name="afterClobber"></form>';
+      const clobbered = parserHost.querySelector('#clobbered');
+      assert(clobbered.appendChild instanceof HTMLInputElement);
+      assert(clobbered.childNodes instanceof HTMLInputElement);
+      assert.strictEqual(clobbered.afterClobber.name, 'afterClobber');
+      const afterClobber = document.createElement('input');
+      afterClobber.name = 'afterMutation';
+      Node.prototype.appendChild.call(clobbered, afterClobber);
+      assert.strictEqual(clobbered.afterMutation, afterClobber);
+
+      const timerResult = await new Promise((resolve) => {
+        const timerId = setTimeout(function callback(value) {
+          resolve({ id: timerId, receiver: this, value });
+        }, 0, 'timer-value');
+        assert.strictEqual(typeof timerId, 'number');
+        assert.strictEqual(String(setTimeout), 'function setTimeout() { [native code] }');
+      });
+      assert.strictEqual(timerResult.receiver, window);
+      assert.strictEqual(timerResult.value, 'timer-value');
+      let cancelled = false;
+      const cancelledId = setTimeout(() => { cancelled = true; }, 0);
+      clearTimeout(cancelledId);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      assert.strictEqual(cancelled, false);
+      const intervalId = await new Promise((resolve) => {
+        const id = setInterval(() => {
+          clearInterval(id);
+          resolve(id);
+        }, 0);
+        assert.strictEqual(typeof id, 'number');
+      });
+      assert.strictEqual(typeof intervalId, 'number');
 
       const canvas = document.createElement('canvas');
       assert(canvas instanceof HTMLCanvasElement);
@@ -537,6 +604,10 @@ spawnSyncAndAssert(process.execPath, [
     );
     assert.throws(
       () => install({ url: 'https://example.test/', window: { properties: { location: null } } }),
+      /protected browser environment property/,
+    );
+    assert.throws(
+      () => install({ url: 'https://example.test/', window: { properties: { setTimeout: null } } }),
       /protected browser environment property/,
     );
   `,

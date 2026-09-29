@@ -150,12 +150,10 @@ jobs:
           printf '%s\n' \
             '## 本次更新' \
             '' \
-            '- Cookie 容器补齐 Path、Domain、Secure、Expires 与 Max-Age，临时挑战 Cookie 可按浏览器规则过期删除。' \
-            '- 保留 `</html>` 后的页面节点和脚本，并补齐 `document.readyState`、`document.currentScript` 等生命周期基础状态。' \
-            '- 本地挑战执行器可据此按 DOM 顺序运行内联、外链和尾部 `r=m` 脚本，并共享浏览器全局状态。' \
-            '- 对齐 Chromium 的 `XPathExpression`、`navigator.webkitPersistentStorage` 和空 `href` 锚点 URL 表面，减少挑战脚本的浏览器环境分支差异。' \
-            '- 保留兼容挑战脚本所需的 `Buffer`，同时继续隐藏 `process`、`require` 等 Node 专有全局；`fetch()` 不再因缺失 Buffer 直接失败。' \
-            '- 保持 `document.all`、原始 HTML、动态 UA、Storage 与 location/history 的兼容行为。' \
+            '- 补齐 `HTMLFormElement` 的控件具名属性：`name` 和 `id` 可按浏览器规则覆盖表单成员，并会随插入、改名和删除刷新。' \
+            '- DOM 内部改用节点私有状态处理表单属性遮蔽，初始 HTML、动态 DOM、集合遍历和序列化可保持正常工作。' \
+            '- `setTimeout`、`setInterval` 现在返回浏览器式数字句柄，支持取消、回调参数和 `window` 回调上下文。' \
+            '- 保持 `document.all`、原始 HTML、动态 UA、Cookie/Storage 与 location/history 的已有兼容行为。' \
             '' \
             '## 构建与验证' \
             '' \
