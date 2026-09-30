@@ -247,6 +247,15 @@ spawnSyncAndAssert(process.execPath, [
       assert(navigator.connection instanceof NetworkInformation);
       assert.strictEqual(Object.prototype.toString.call(navigator.connection), '[object NetworkInformation]');
       assert.deepStrictEqual(Object.keys(navigator.connection), []);
+      assert.deepStrictEqual(Reflect.ownKeys(navigator.connection), []);
+      const webdriverDescriptor = Object.getOwnPropertyDescriptor(Navigator.prototype, 'webdriver');
+      assert.strictEqual(webdriverDescriptor.configurable, true);
+      assert.strictEqual(webdriverDescriptor.enumerable, true);
+      assert.strictEqual(webdriverDescriptor.get.name, 'get webdriver');
+      assert.deepStrictEqual(Reflect.ownKeys(webdriverDescriptor.get), ['length', 'name']);
+      const downlinkDescriptor = Object.getOwnPropertyDescriptor(NetworkInformation.prototype, 'downlink');
+      assert.strictEqual(downlinkDescriptor.get.name, 'get downlink');
+      assert.deepStrictEqual(Reflect.ownKeys(downlinkDescriptor.get), ['length', 'name']);
       assert.strictEqual(navigator.mimeTypes.length, 2);
       assert.strictEqual(navigator.mimeTypes.namedItem('application/pdf').suffixes, 'pdf');
       assert(navigator.plugins instanceof PluginArray);
@@ -257,6 +266,14 @@ spawnSyncAndAssert(process.execPath, [
       assert.strictEqual(Object.prototype.toString.call(pdfPlugin), '[object Plugin]');
       assert.strictEqual(pdfPlugin.length, 2);
       assert.strictEqual(navigator.mimeTypes[0].enabledPlugin, pdfPlugin);
+      assert.strictEqual(
+        typeof Object.getOwnPropertyDescriptor(Navigator.prototype, 'sendBeacon').value,
+        'function',
+      );
+      assert.strictEqual(
+        typeof Object.getOwnPropertyDescriptor(Navigator.prototype, 'getBattery').value,
+        'function',
+      );
       assert.strictEqual(navigator.sendBeacon('/beacon', 'body'), true);
       assert.strictEqual(String(navigator.getBattery), 'function getBattery() { [native code] }');
       const battery = await navigator.getBattery();
@@ -494,6 +511,32 @@ spawnSyncAndAssert(process.execPath, [
       console.error(error.stack);
       process.exitCode = 1;
     });
+  `,
+], { status: 0, stderr: '' });
+
+spawnSyncAndAssert(process.execPath, [
+  '-e',
+  `
+    const assert = require('node:assert');
+    const { install } = require('node:browser-env');
+    const lifecycleState = {};
+    install({
+      browserEnvLifecycleState: lifecycleState,
+      browserEnvManualTimerScheduling: true,
+      url: 'https://example.test/',
+    });
+    const events = [];
+    const cancelled = setTimeout(() => events.push('cancelled'), 0);
+    clearTimeout(cancelled);
+    setTimeout(() => {
+      events.push('outer');
+      setTimeout(() => events.push('inner'), 0);
+    }, 0);
+    setTimeout(() => events.push('delayed'), 1);
+    assert.strictEqual(lifecycleState.runNextImmediateBrowserTimer(), true);
+    assert.strictEqual(lifecycleState.runNextImmediateBrowserTimer(), true);
+    assert.strictEqual(lifecycleState.runNextImmediateBrowserTimer(), false);
+    assert.deepStrictEqual(events, ['outer', 'inner']);
   `,
 ], { status: 0, stderr: '' });
 

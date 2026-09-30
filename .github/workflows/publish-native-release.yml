@@ -150,10 +150,10 @@ jobs:
           printf '%s\n' \
             '## 本次更新' \
             '' \
-            '- 补齐 `HTMLFormElement` 的控件具名属性：`name` 和 `id` 可按浏览器规则覆盖表单成员，并会随插入、改名和删除刷新。' \
-            '- DOM 内部改用节点私有状态处理表单属性遮蔽，初始 HTML、动态 DOM、集合遍历和序列化可保持正常工作。' \
-            '- `setTimeout`、`setInterval` 现在返回浏览器式数字句柄，支持取消、回调参数和 `window` 回调上下文。' \
-            '- 保持 `document.all`、原始 HTML、动态 UA、Cookie/Storage 与 location/history 的已有兼容行为。' \
+            '- 修正 `Navigator`、`NetworkInformation` 的属性描述符与私有状态形态，减少浏览器环境探测差异。' \
+            '- `getBattery`、`sendBeacon` 采用浏览器一致的数据属性描述符；连接信息不再暴露内部状态键。' \
+            '- 新增内部零延时任务调度接口，使兼容执行器可按解析期浏览器任务顺序处理回调，普通计时器行为保持不变。' \
+            '- 新增 Navigator、网络连接描述符和即时任务队列的回归测试。' \
             '' \
             '## 构建与验证' \
             '' \
